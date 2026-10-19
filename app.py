@@ -305,22 +305,22 @@ elif st.session_state.exam_state == "SUBMITTED":
         status = "Falsch"
 
         if q["type"] == "single_choice":
-            if u_ans == q["correct_answer"]:
+            if u_ans == q.get("correct_answer"):
                 earned = q["points"]
                 status = "Richtig"
 
         elif q["type"] == "multiple_choice":
-            if isinstance(u_ans, list) and set(u_ans) == set(q["correct_answer"]):
+            if isinstance(u_ans, list) and set(u_ans) == set(q.get("correct_answer", [])):
                 earned = q["points"]
                 status = "Richtig"
-            elif isinstance(u_ans, list) and len(set(u_ans).intersection(set(q["correct_answer"]))) > 0:
+            elif isinstance(u_ans, list) and len(set(u_ans).intersection(set(q.get("correct_answer", [])))) > 0:
                 earned = round(q["points"] / 2, 1)
                 status = "Teilweise Richtig"
 
         elif q["type"] == "freetext":
             if u_ans and len(u_ans.strip()) > 15:
                 earned = q["points"]
-                status = "Richtig (KI-bewertet)"
+                status = "Richtig (Bewertet)"
             else:
                 earned = 0
                 status = "Unvollständig"
@@ -335,7 +335,7 @@ elif st.session_state.exam_state == "SUBMITTED":
                 status = "Teilweise Richtig"
 
         elif q["type"] == "cloze":
-            if u_ans and u_ans.lower() == q["correct_answer"].lower():
+            if u_ans and u_ans.lower() == str(q.get("correct_answer", "")).lower():
                 earned = q["points"]
                 status = "Richtig"
 
@@ -357,7 +357,7 @@ elif st.session_state.exam_state == "SUBMITTED":
 
     score_pct = round((total_earned / total_achievable) * 100, 1)
 
-    # Top KPI KPI-Metriken
+    # Top KPI-Metriken
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
     col_kpi1.metric("Gesamtergebnis", f"{total_earned} / {total_achievable} Pkt.")
     col_kpi2.metric("Erfolgsquote", f"{score_pct}%")
@@ -394,14 +394,25 @@ elif st.session_state.exam_state == "SUBMITTED":
 
     st.markdown("---")
 
-    # Detail-Musterlösung
+    # Detail-Musterlösung (Mit sicherem Schlüssel-Zugriff gegen KeyError)
     st.markdown("### 🔍 Detaillierte Musterlösung & Erklärung")
     for item in evaluations:
         q = item["question"]
         with st.expander(f"Aufgabe {q['id']}: {q['question'][:75]}... [{item['status']} - {item['earned']}/{q['points']} Pkt.]"):
             st.write(f"**Aufgabenstellung:** {q['question']}")
             st.write(f"**Ihre Antwort:** `{item['user_ans']}`")
-            st.write(f"**Musterlösung:** `{q['correct_answer']}`")
+            
+            # Dynamische Handhabung je nach Fragetyp
+            if q["type"] == "matching":
+                st.write("**Musterlösung (Zuordnungen):**")
+                for key_term, val_term in q["pairs"].items():
+                    st.write(f"• {key_term} ➔ `{val_term}`")
+            elif q["type"] == "multiple_choice" and isinstance(q.get("correct_answer"), list):
+                correct_str = ", ".join(q["correct_answer"])
+                st.write(f"**Musterlösung:** `{correct_str}`")
+            else:
+                st.write(f"**Musterlösung:** `{q.get('correct_answer', 'Siehe Erklärung')}`")
+                
             st.info(f"**Erklärung:** {q['explanation']}")
 
     if st.button("🔄 Neue Simulation Starten", use_container_width=True):
