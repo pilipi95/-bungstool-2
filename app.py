@@ -9,7 +9,7 @@ import pandas as pd
 import plotly.express as px
 
 # -----------------------------------------------------------------------------
-# 1. PAGE CONFIGURATION & UX STYLING
+# 1. PAGE CONFIGURATION & STYLING
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="KI-Exam Simulator - MFA Abschlussprüfung",
@@ -61,44 +61,46 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. KI-PROMPT & EXTRAKTIONSLOGIK (GEMINI VISION)
+# 2. KI-PROMPT & ENGINE (GEMINI VISION MIT NATIVEM JSON-MODUS)
 # -----------------------------------------------------------------------------
 SYSTEM_PROMPT = """
-Du bist ein Experte für medizinische Abschlussprüfungen (MFA Baden-Württemberg). 
-Analysiere das übergebene Bild einer Prüfungsseite exakt. 
+Du bist ein hochpräziser Prüfungsprüfer für medizinische Fachberufe (MFA Baden-Württemberg). 
+Analysiere die vorgelegte Seite einer Abschlussprüfung exakt (Text, Tabellen, EKG-Streifen, Grafiken, Formulare).
 
-Extrahiere alle sichtbaren Aufgaben und erstelle ein valides JSON-Array im folgenden Format:
+Extrahiere ALLE sichtbaren Aufgaben und erstelle eine JSON-Liste im folgenden Schema:
 [
   {
     "id": 1,
-    "type": "single_choice" oder "multiple_choice" oder "matching" oder "freetext",
+    "type": "single_choice" ODER "multiple_choice" ODER "matching" ODER "freetext",
     "field": "Behandlungsassistenz / Labor / WISO / Abrechnung",
-    "question": "Exakter Fragetext",
-    "has_image": true/false (true, wenn die Aufgabe sich auf eine Grafik/Tabelle/EKG bezieht),
-    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],  # entfällt bei matching/freetext
-    "pairs": {"Schlüssel": "Wert"},                       # nur bei matching
-    "correct_answer": "Exakte richtige Antwort",
+    "question": "Vollständiger Fragetext der Aufgabe",
+    "has_image": true/false (true setzen, wenn sich die Aufgabe auf ein EKG, Schema, Diagramm oder Formular auf dieser Seite bezieht),
+    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],  # nur bei single_choice / multiple_choice
+    "pairs": {"Zuordnungsbegriff": "Passende Antwort"},  # nur bei matching
+    "correct_answer": "Exakte Lösung laut Dokument / medizinischem Fachwissen",
     "points": 2,
-    "explanation": "Fachliche Begründung der Lösung"
+    "explanation": "Detaillierte medizinische/rechtliche Begründung der Lösung"
   }
 ]
-Antworte AUSSCHLIESSLICH mit dem korrekten JSON-Code. Keinerlei Einleitungstext!
 """
 
 def extract_questions_with_ai(image, api_key):
     """
-    Analysiert ein Bild einer PDF-Seite mit Gemini Vision und gibt strukturierte Fragen zurück.
+    Analysiert ein Bild einer PDF-Seite mit Gemini Vision und gibt garantiert JSON zurück.
     """
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Nativer JSON-Modus erzwingt valides JSON ohne Markdown-Codeblöcke
+        model = genai.GenerativeModel(
+            model_name='gemini-1.5-flash',
+            generation_config={"response_mime_type": "application/json"}
+        )
         
         response = model.generate_content([SYSTEM_PROMPT, image])
-        clean_json = response.text.replace("```json", "").replace("```", "").strip()
-        data = json.loads(clean_json)
-        return data
+        data = json.loads(response.text)
+        return data if isinstance(data, list) else []
     except Exception as e:
-        st.error(f"Fehler bei der KI-Analyse: {e}")
+        st.error(f"Fehler bei der Seiten-Analyse: {e}")
         return []
 
 # Session State Initialisierung
@@ -120,7 +122,7 @@ st.markdown('<div class="main-header">🎓 KI-Exam Simulator — MFA Abschlusspr
 st.markdown('<div class="sub-header">Inhaltsbasierte KI-Analyse von Prüfungsunterlagen (Multimodal OCR + Vision)</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR: API-KEY & PDF KI-ANALSYE
+# 3. SIDEBAR: API-KEY, PDF KI-ANALSYE & DEBUG
 # -----------------------------------------------------------------------------
 with st.sidebar:
     st.header("🔑 Gemini API Key")
@@ -132,34 +134,41 @@ with st.sidebar:
 
     if uploaded_pdf and api_key:
         if st.button("🤖 KI-Analyse Jetzt Starten", type="primary", use_container_width=True):
-            with st.spinner("Konvertiere PDF-Seiten & analysiere Text und Grafiken per KI..."):
-                # PDF in hochauflösende Bilder umwandeln
+            with st.spinner("Konvertiere PDF-Seiten in hoher Auflösung & erstelle Aufgaben per KI..."):
                 pdf_bytes = uploaded_pdf.read()
+                
+                # 1. PDF in hochauflösende Bilder umwandeln (200 DPI für beste Lesbarkeit)
                 try:
-                    images = convert_from_bytes(pdf_bytes)
-                except Exception:
-                    # Fallback falls poppler/pdf2image lokal nicht installiert ist
-                    from PIL import Image
+                    images = convert_from_bytes(pdf_bytes, dpi=200)
+                    st.info(f"📄 {len(images)} PDF-Seite(n) erfolgreich gerendert.")
+                except Exception as e:
+                    st.error(f"Fehler bei der PDF-Bildkonvertierung: {e}. Ist poppler-utils installiert?")
                     images = []
 
                 all_extracted_questions = []
                 st.session_state.page_images = {}
 
+                # 2. Seiten nacheinander an Gemini senden (mit Rate-Limit Pause)
                 for idx, page_img in enumerate(images, 1):
+                    st.caption(f"Analysiere Seite {idx} von {len(images)}...")
                     st.session_state.page_images[idx] = page_img
+                    
                     q_list = extract_questions_with_ai(page_img, api_key)
                     for q in q_list:
                         q["source_page"] = idx
                         all_extracted_questions.append(q)
+                    
+                    # 1,5 Sekunden Pause zwischen Anfragen zur Einhaltung der Free-Tier Rate-Limits (15 RPM)
+                    time.sleep(1.5)
 
                 if all_extracted_questions:
-                    # Durchnummerierung anpassen
+                    # Eindeutige Durchnummerierung vergeben
                     for i, q in enumerate(all_extracted_questions, 1):
                         q["id"] = i
                     st.session_state.questions = all_extracted_questions
-                    st.success(f"✅ {len(all_extracted_questions)} Aufgaben inkl. Grafik-Bezügen aus der PDF strukturiert!")
+                    st.success(f"✅ {len(all_extracted_questions)} Aufgaben inkl. Grafiken erfolgreich strukturiert!")
                 else:
-                    st.warning("Keine Aufgaben erkannt. Bitte API-Key und PDF-Inhalt prüfen.")
+                    st.warning("Keine Aufgaben erkannt. Bitte prüfe den API-Key oder die Lesbarkeit der PDF.")
 
     elif uploaded_pdf and not api_key:
         st.warning("Bitte gib oben Deinen Gemini API Key ein.")
@@ -181,10 +190,11 @@ with st.sidebar:
 if st.session_state.exam_state == "SETUP":
     st.subheader("📋 KI-gestützte Prüfungsvorbereitung")
     st.write("""
-    **So funktioniert der inhaltsbasierte KI-Modus:**
+    **Ablauf:**
     1. Trage Deinen **Gemini API Key** in der linken Seitenleiste ein.
     2. Lade eine originale **Prüfungs-PDF** (mit Texten, EKG-Streifen, Tabellen etc.) hoch.
-    3. Die Multimodale KI analysiert die PDF-Seiten visuell, versteht den Zusammenhang zwischen Text & Grafiken und baut daraus ein interaktives Prüfungsset.
+    3. Klicke auf **"KI-Analyse Jetzt Starten"**.
+    4. Die Multimodale KI analysiert die PDF-Seiten visuell und baut daraus ein interaktives Prüfungsset inklusive Original-Grafiken.
     """)
 
     if len(st.session_state.questions) > 0:
@@ -226,10 +236,10 @@ elif st.session_state.exam_state == "RUNNING":
         st.markdown(f"**Themenbereich:** `{q.get('field', 'Allgemein')}`")
         st.markdown(f"**Aufgabenstellung:** {q['question']}")
 
-        # Falls die Aufgabe ein Bild/Grafik aus der PDF nutzt, wird die KI-analysierte Orginalseite eingeblendet
+        # Zeige die dazugehörige Original-Seite aus der PDF, falls die Aufgabe sich auf eine Abbildung stützt
         if q.get("has_image") and q.get("source_page") in st.session_state.page_images:
-            st.caption(f"🖼️ Dazugehörige Original-Grafik / Seite {q['source_page']}:")
-            st.image(st.session_state.page_images[q["source_page"]], width=500)
+            st.caption(f"🖼️ Dazugehörige Original-Grafik (Seite {q['source_page']}):")
+            st.image(st.session_state.page_images[q["source_page"]], width=550)
 
         # Dynamic Rendering je nach Fragetyp
         if q["type"] in ["single_choice", "single"]:
@@ -311,7 +321,7 @@ elif st.session_state.exam_state == "SUBMITTED":
         elif q["type"] == "freetext":
             if u_ans and len(u_ans.strip()) > 10:
                 earned = pts
-                status = "Richtig (KI-geprüft)"
+                status = "Richtig (Bewertet)"
 
         total_earned += earned
 
@@ -345,7 +355,7 @@ elif st.session_state.exam_state == "SUBMITTED":
             st.write(f"**Aufgabenstellung:** {q['question']}")
             
             if q.get("has_image") and q.get("source_page") in st.session_state.page_images:
-                st.image(st.session_state.page_images[q["source_page"]], width=400)
+                st.image(st.session_state.page_images[q["source_page"]], width=450)
 
             st.write(f"**Ihre Antwort:** `{item['user_ans']}`")
             
