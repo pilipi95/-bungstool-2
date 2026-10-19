@@ -44,7 +44,7 @@
       "Arbeitsunfall": "UV-GOÄ (DGUV)"
     },
     "points": 3,
-    "explanation": "GKV läuft über EBM, Privat über GOÄ, Arbeitsunfälle über die UV-GOÄ der Berufsgenossenschaften."
+    "explanation": "GKV läuft über den EBM, Privatbehandlungen über die GOÄ und Arbeits- bzw. Wegeunfälle über die UV-GOÄ der Berufsgenossenschaften."
   },
   {
     "id": 4,
@@ -54,6 +54,175 @@
     "options": [],
     "correct_answer": "Minderjährige von vollendeten 7. bis zum vollendeten 18. Lebensjahr sind beschränkt geschäftsfähig. Rechtsgeschäfte bedürfen in der Regel der Einwilligung der gesetzlichen Vertreter, sofern sie nicht lediglich rechtlich vorteilhaft sind oder unter den Taschengeldparagrafen (§ 110 BGB) fallen.",
     "points": 4,
-    "explanation": "Kinder unter 7 sind geschäftsunfähig, Personen von 7 bis 17 beschränkt geschäftsfähig, ab 18 voll geschäftsfähig."
+    "explanation": "Kinder unter 7 Jahren sind geschäftsunfähig, Personen von 7 bis 17 beschränkt geschäftsfähig, ab 18 voll geschäftsfähig."
+  },
+  {
+    "id": 5,
+    "type": "single_choice",
+    "field": "Behandlungsassistenz / Kardiologie",
+    "question": "Bei einem Patienten wird ein Ruhe-EKG abgleitet. Wo muss die Brustwandelektrode V4 korrekterweise angelegt werden?",
+    "options": [
+      "A) 4. Intercostalraum (ICR) rechts parasternal",
+      "B) 4. Intercostalraum (ICR) links parasternal",
+      "C) 5. Intercostalraum (ICR) links in der Medioklavikularlinie",
+      "D) 5. Intercostalraum (ICR) links in der vorderen Axillarlinie"
+    ],
+    "correct_answer": "C) 5. Intercostalraum (ICR) links in der Medioklavikularlinie",
+    "points": 2,
+    "explanation": "V1: 4. ICR rechts parasternal; V2: 4. ICR links parasternal; V3: zwischen V2 und V4; V4: 5. ICR links Medioklavikularlinie; V5: 5. ICR links vordere Axillarlinie; V6: 5. ICR links mittlere Axillarlinie."
+  },
+  {
+    "id": 6,
+    "type": "multiple_choice",
+    "field": "Behandlungsassistenz / Anatomie & Pathologie",
+    "question": "Welche der folgenden Symptome sind typische Leitsymptome einer akuten Appendizitis (Wurmfortsatzentzündung)? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Schmerzwanderung vom Epigastrium/Nabelbereich in den rechten Unterbauch",
+      "B) Loslassschmerz (Blumberg-Zeichen)",
+      "C) Schmerzen beim Anheben des rechten Beins gegen Widerstand (Psoas-Zeichen)",
+      "D) Starke linksseitige Flankenschmerzen mit Ausstrahlung in die Leiste"
+    ],
+    "correct_answer": [
+      "A) Schmerzwanderung vom Epigastrium/Nabelbereich in den rechten Unterbauch",
+      "B) Loslassschmerz (Blumberg-Zeichen)",
+      "C) Schmerzen beim Anheben des rechten Beins gegen Widerstand (Psoas-Zeichen)"
+    ],
+    "points": 3,
+    "explanation": "Linksseitige Flankenschmerzen sprechen eher für eine Nierenkolik oder Divertikulitis. Die Schmerzwanderung nach rechts unten sowie Blumberg- und Psoas-Zeichen sind klassisch für die Appendizitis."
+  },
+  {
+    "id": 7,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Hämatologie",
+    "question": "Ordnen Sie den Blutbestandteilen ihre jeweilige Hauptfunktion zu:",
+    "pairs": {
+      "Erythrozyten": "Sauerstoff- und Kohlendioxidtransport",
+      "Leukozyten": "Immunabwehr von Krankheitserregern",
+      "Thrombozyten": "Blutstillung und Blutgerinnung",
+      "Blutplasma": "Transport von Nährstoffen, Hormonen und Abfallstoffen"
+    },
+    "points": 4,
+    "explanation": "Erythrozyten transportieren Gase (O2/CO2), Leukozyten sichern die Immunabwehr, Thrombozyten leiten die Blutstillung ein und das Plasma transportiert gelöste Stoffe."
+  },
+  {
+    "id": 8,
+    "type": "single_choice",
+    "field": "Betriebsorganisation & Abrechnung",
+    "question": "In welchem Intervall können GKV-Versicherte ab dem vollendeten 35. Lebensjahr die Gesundheitsuntersuchung ('Check-up 35') in Anspruch nehmen?",
+    "options": [
+      "A) Jedes Kalenderjahr einmal",
+      "B) Alle 2 Jahre",
+      "C) Jedes 3. Kalenderjahr (alle 3 Jahre)",
+      "D) Alle 5 Jahre"
+    ],
+    "correct_answer": "C) Jedes 3. Kalenderjahr (alle 3 Jahre)",
+    "points": 2,
+    "explanation": "Seit der Reform der Richtlinie steht der Check-up 35 GKV-Versicherten ab 35 Jahren jedes 3. Kalenderjahr zu (einmalig zwischen 18 und 34 Jahren)."
+  },
+  {
+    "id": 9,
+    "type": "multiple_choice",
+    "field": "Betriebsorganisation & Abrechnung",
+    "question": "Welche Angaben gehören nach der Arzneimittelverschreibungsverordnung (AMVV) zwingend auf ein Kassenrezept (Muster 16)? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Name, Vorname, Geburtsdatum und Anschrift des Patienten",
+      "B) Name, Berufsbezeichnung und Anschrift des verschreibenden Arztes inkl. Telefonnummer",
+      "C) Ausstellungsdatum",
+      "D) Diagnose nach ICD-10-Code"
+    ],
+    "correct_answer": [
+      "A) Name, Vorname, Geburtsdatum und Anschrift des Patienten",
+      "B) Name, Berufsbezeichnung und Anschrift des verschreibenden Arztes inkl. Telefonnummer",
+      "C) Ausstellungsdatum"
+    ],
+    "points": 3,
+    "explanation": "Eine Diagnose ist auf dem normalen Arzneiverordnungsblatt (Muster 16) für die Apotheke rechtlich nicht erforderlich (im Gegensatz zu Verordnungen für Heilmittel)."
+  },
+  {
+    "id": 10,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Pharmakologie",
+    "question": "Ordnen Sie die Arzneiformen der korrekten Fachbezeichnung bzw. Applikationsart zu:",
+    "pairs": {
+      "Suppositorium": "Rektale Verabreichung (Zäpfchen)",
+      "Sublingual": "Unter die Zunge zur Verabreichung",
+      "Parenteral": "Unter Umgehung des Magen-Darm-Trakts (z. B. i.v., i.m., s.c.)",
+      "Kutan": "Auf die Haut aufgetragen"
+    },
+    "points": 4,
+    "explanation": "Suppositorien wirken rektal, sublinguale Tabletten lösen sich unter der Zunge auf, parenterale Applikationen umgehen den Magen-Darm-Trakt und kutane Mittel wirken auf der Haut."
+  },
+  {
+    "id": 11,
+    "type": "single_choice",
+    "field": "Wirtschafts- und Betriebskunde (WISO)",
+    "question": "Wie lange beträgt die gesetzliche Probezeit im Berufsausbildungsverhältnis nach dem Berufsbildungsgesetz (BBiG)?",
+    "options": [
+      "A) Mindestens 2 Wochen, höchstens 2 Monate",
+      "B) Mindestens 1 Monat, höchstens 4 Monate",
+      "C) Genau 3 Monate",
+      "D) Mindestens 1 Monat, höchstens 6 Monate"
+    ],
+    "correct_answer": "B) Mindestens 1 Monat, höchstens 4 Monate",
+    "points": 2,
+    "explanation": "Nach § 20 BGB/BBiG muss die Probezeit bei Auszubildenden mindestens einen Monat und darf höchstens vier Monate betragen."
+  },
+  {
+    "id": 12,
+    "type": "multiple_choice",
+    "field": "Wirtschafts- und Betriebskunde (WISO)",
+    "question": "Welche der folgenden Säulen gehören zum System der gesetzlichen Sozialversicherung in Deutschland? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Gesetzliche Krankenversicherung (GKV)",
+      "B) Gesetzliche Rentenversicherung (GRV)",
+      "C) Gesetzliche Unfallversicherung (DGUV)",
+      "D) Private Haftpflichtversicherung"
+    ],
+    "correct_answer": [
+      "A) Gesetzliche Krankenversicherung (GKV)",
+      "B) Gesetzliche Rentenversicherung (GRV)",
+      "C) Gesetzliche Unfallversicherung (DGUV)"
+    ],
+    "points": 3,
+    "explanation": "Die 5 Säulen der Sozialversicherung sind Kranken-, Renten-, Unfall-, Pflege- und Arbeitslosenversicherung. Haftpflichtversicherungen sind private Individualversicherungen."
+  },
+  {
+    "id": 13,
+    "type": "freetext",
+    "field": "Betriebsorganisation & Hygiene",
+    "question": "Erklären Sie den Unterschied zwischen Desinfektion und Sterilisation bezogen auf das hygienische Ziel.",
+    "options": [],
+    "correct_answer": "Desinfektion bedeutet die Reduktion von Krankheitserregern um mind. 10^5 Stufen, sodass vom Gegenstand/der Haut keine Infektionsgefahr mehr ausgeht (Keimarmut). Sterilisation bezeichnet die vollständige Abtötung bzw. irreversible Inaktivierung aller vermehrungsfähigen Mikroorganismen inkl. sporenbildender Bakterien (Keimfreiheit).",
+    "points": 4,
+    "explanation": "Desinfektion = Keimarmut; Sterilisation = absolute Keimfreiheit (inkl. Bakteriensporen)."
+  },
+  {
+    "id": 14,
+    "type": "single_choice",
+    "field": "Gemeinschaftskunde",
+    "question": "Welches Organ vertritt die Interessen der 16 Bundesländer auf Bundesebene bei der Gesetzgebung in Deutschland?",
+    "options": [
+      "A) Der Bundestag",
+      "B) Der Bundesrat",
+      "C) Die Bundesversammlung",
+      "D) Das Bundesverfassungsgericht"
+    ],
+    "correct_answer": "B) Der Bundesrat",
+    "points": 2,
+    "explanation": "Durch den Bundesrat wirken die Länder an der Gesetzgebung und Verwaltung des Bundes sowie in Angelegenheiten der Europäischen Union mit."
+  },
+  {
+    "id": 15,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Notfallmedizin",
+    "question": "Ordnen Sie die Notfallsymptome der passenden Verdachtsdiagnose zu:",
+    "pairs": {
+      "Plötzlicher Vernichtungsschmerz hinter dem Brustbein, Ausstrahlung in den linken Arm, Atemnot": "Akutes Koronarsyndrom / Myokardinfarkt",
+      "Plötzliche halbseitige Lähmung, Sprachstörung, hängender Mundwinkel": "Apoplex (Schlaganfall)",
+      "Atemnot, exspiratorischer Stridor, pfeifendes Ausatemgeräusch": "Asthma-Anfall",
+      "Kaltschweißigkeit, Tremor, Heißhunger, Verwirrtheit bei Diabetiker": "Hypoglykämie (Unterzuckerung)"
+    },
+    "points": 4,
+    "explanation": "Brustschmerz/Ausstrahlung = Infarkt; FAST-Symptome = Schlaganfall; Giemen/Brummen bei Ausatmung = Asthma; Kaltschweiß/Zittern = Hypoglykämie."
   }
 ]
