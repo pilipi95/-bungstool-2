@@ -1,0 +1,59 @@
+[
+  {
+    "id": 1,
+    "type": "single_choice",
+    "field": "Behandlungsassistenz / Labor",
+    "question": "Frau Kaiser (61 J.) leidet an Diabetes mellitus Typ 2. Welcher Blutzucker-Laborwert gibt Auskunft über die durchschnittliche Blutzuckereinstellung der letzten 8 bis 12 Wochen (Langzeitzucker)?",
+    "options": [
+      "A) Nüchternglukose im Venenplasma",
+      "B) HbA1c (Glykohämoglobin)",
+      "C) Oraler Glukosetoleranztest (oGTT)",
+      "D) Mikroalbumin im Urin (Micral-Test)"
+    ],
+    "correct_answer": "B) HbA1c (Glykohämoglobin)",
+    "points": 2,
+    "explanation": "Der HbA1c-Wert gibt den Anteil des verzuckerten Hämoglobins an und spiegelt die durchschnittliche Blutglukosekonzentration der vergangenen 2–3 Monate wider."
+  },
+  {
+    "id": 2,
+    "type": "multiple_choice",
+    "field": "Behandlungsassistenz / Hygiene",
+    "question": "Welche Maßnahmen gehören zur Standardhygiene bei der Blutentnahme? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Händedesinfektion vor und nach dem Patientenkontakt",
+      "B) Tragen von Einmalhandschuhen",
+      "C) Hautdesinfektion des Patienten mit Einwirkzeit",
+      "D) Wiederaufsetzen der Schutzkappe auf die Kanüle (Recapping)"
+    ],
+    "correct_answer": [
+      "A) Händedesinfektion vor und nach dem Patientenkontakt",
+      "B) Tragen von Einmalhandschuhen",
+      "C) Hautdesinfektion des Patienten mit Einwirkzeit"
+    ],
+    "points": 3,
+    "explanation": "Recapping ist laut BioStoffV und TRBA 250 wegen extrem hoher Verletzungs- und Infektionsgefahr strengstens verboten!"
+  },
+  {
+    "id": 3,
+    "type": "matching",
+    "field": "Betriebsorganisation & Abrechnung",
+    "question": "Ordnen Sie die Abrechnungsregelungen den passenden Kostenträgern zu:",
+    "pairs": {
+      "GKV-Patient": "EBM (Einheitlicher Bewertungsmaßstab)",
+      "Privatpatient": "GOÄ (Gebührenordnung für Ärzte)",
+      "Arbeitsunfall": "UV-GOÄ (DGUV)"
+    },
+    "points": 3,
+    "explanation": "GKV läuft über EBM, Privat über GOÄ, Arbeitsunfälle über die UV-GOÄ der Berufsgenossenschaften."
+  },
+  {
+    "id": 4,
+    "type": "freetext",
+    "field": "Wirtschafts- und Betriebskunde (WISO)",
+    "question": "Erklären Sie den Begriff 'Beschränkte Geschäftsfähigkeit' nach § 106 BGB und nennen Sie die Altersgrenzen.",
+    "options": [],
+    "correct_answer": "Minderjährige von vollendeten 7. bis zum vollendeten 18. Lebensjahr sind beschränkt geschäftsfähig. Rechtsgeschäfte bedürfen in der Regel der Einwilligung der gesetzlichen Vertreter, sofern sie nicht lediglich rechtlich vorteilhaft sind oder unter den Taschengeldparagrafen (§ 110 BGB) fallen.",
+    "points": 4,
+    "explanation": "Kinder unter 7 sind geschäftsunfähig, Personen von 7 bis 17 beschränkt geschäftsfähig, ab 18 voll geschäftsfähig."
+  }
+]
