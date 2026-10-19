@@ -1,6 +1,5 @@
 import streamlit as st
 import pypdf
-import pdfplumber
 from PIL import Image
 import io
 import time
@@ -8,7 +7,7 @@ import pandas as pd
 import plotly.express as px
 
 # -----------------------------------------------------------------------------
-# 1. PAGE CONFIGURATION & HIGH-CONTRAST UX STYLING
+# 1. PAGE CONFIGURATION & STYLING
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Pro-Exam Simulator - MFA Prüfungssimulation",
@@ -17,7 +16,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom High-Contrast UI CSS for focus mode and examination badges
 st.markdown("""
 <style>
     .main-header {
@@ -57,15 +55,18 @@ st.markdown("""
         font-size: 0.85rem;
         font-weight: 600;
     }
-    .stButton>button {
-        border-radius: 6px;
-        font-weight: 600;
+    .img-container {
+        border: 2px dashed #94A3B8;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: #ffffff;
+        margin-bottom: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. FRAGENKATALOG (Modelliert nach MFA Abschlussprüfungen Baden-Württemberg)
+# 2. ERWEITERTER FRAGENKATALOG (Inklusive Bild-Aufforderungen & Medien)
 # -----------------------------------------------------------------------------
 MFA_SAMPLE_EXAM = [
     {
@@ -73,6 +74,7 @@ MFA_SAMPLE_EXAM = [
         "type": "single_choice",
         "field": "Behandlungsassistenz / Labor",
         "question": "Frau Kaiser (61 J.) leidet an Diabetes mellitus Typ 2. Welcher Blutzucker-Laborwert gibt Auskunft über die durchschnittliche Blutzuckereinstellung der letzten 8 bis 12 Wochen (Langzeitzucker)?",
+        "image_url": None,
         "options": [
             "A) Nüchternglukose im Venenplasma",
             "B) HbA1c (Glykohämoglobin)",
@@ -85,9 +87,26 @@ MFA_SAMPLE_EXAM = [
     },
     {
         "id": 2,
+        "type": "image_labeling",
+        "field": "Behandlungsassistenz / Anatomie & EKG",
+        "question": "Betrachten Sie das untenstehende EKG-Schema. Welcher Welle/Strecke entspricht der Pfeil, der die ventrikuläre Erregungsrückbildung anzeigt?",
+        "image_demo": "EKG_SCHEMA",  # Platzhalter für Bildaufruf
+        "options": [
+            "A) P-Welle",
+            "B) QRS-Komplex",
+            "C) T-Welle",
+            "D) ST-Strecke"
+        ],
+        "correct_answer": "C) T-Welle",
+        "points": 3,
+        "explanation": "Die T-Welle entspricht der Erregungsrückbildung (Repolarisation) der Herzkammern."
+    },
+    {
+        "id": 3,
         "type": "multiple_choice",
         "field": "Behandlungsassistenz / Medizin",
         "question": "Welche der folgenden Maßnahmen gehören zur korrekten Durchführung einer manuellen Blutdruckmessung nach Riva-Rocci (RR)? (Wählen Sie alle zutreffenden Aussagen)",
+        "image_url": None,
         "options": [
             "A) Der Patient sollte vor der Messung ca. 5 Minuten in Ruhe gesessen haben.",
             "B) Die Manschette muss auf Herzhöhe angelegt werden.",
@@ -100,22 +119,24 @@ MFA_SAMPLE_EXAM = [
             "D) Beim Entlasten der Manschette markiert das vollständige Verstummen der Töne den diastolischen Wert."
         ],
         "points": 3,
-        "explanation": "Der erste hörbare Korotkow-Ton kennzeichnet den SYSTOLISCHEN Wert, nicht den diastolischen."
-    },
-    {
-        "id": 3,
-        "type": "freetext",
-        "field": "Wirtschafts- und Betriebskunde",
-        "question": "Eine 17-jährige Auszubildende zur MFA möchte ein E-Bike zum Preis von 2.500 EUR kaufen. Sie hat das Geld gespart. Der Verkäufer weigert sich ohne Zustimmung der Eltern, den Kaufvertrag abzuschließen. Erklären Sie die rechtliche Lage bezüglich der Geschäftsfähigkeit.",
-        "correct_answer": "Minderjährige (7 bis 17 Jahre) sind beschränkt geschäftsfähig (§ 106 BGB). Rechtsgeschäfte, die nicht lediglich rechtlich vorteilhaft sind, bedürfen der Einwilligung oder nachträglichen Genehmigung der gesetzlichen Vertreter (§ 107, § 108 BGB). Der 'Taschengeldparagraf' (§ 110 BGB) greift bei Beträgen dieser Höhe i. d. R. nicht ohne Weiteres.",
-        "points": 5,
-        "explanation": "Minderjährige benötigen für rechtlich nicht ausschließlich vorteilhafte Verträge dieser Größenordnung die schriftliche Zustimmung der Erziehungsberechtigten."
+        "explanation": "Der erste hörbare Korotkow-Ton kennzeichnet den SYSTOLISCHEN Wert."
     },
     {
         "id": 4,
+        "type": "freetext",
+        "field": "Wirtschafts- und Betriebskunde",
+        "question": "Eine 17-jährige Auszubildende zur MFA möchte ein E-Bike zum Preis von 2.500 EUR kaufen. Sie hat das Geld gespart. Der Verkäufer weigert sich ohne Zustimmung der Eltern, den Kaufvertrag abzuschließen. Erklären Sie die rechtliche Lage bezüglich der Geschäftsfähigkeit.",
+        "image_url": None,
+        "correct_answer": "Minderjährige (7 bis 17 Jahre) sind beschränkt geschäftsfähig (§ 106 BGB). Rechtsgeschäfte bedürfen der Einwilligung oder nachträglichen Genehmigung der gesetzlichen Vertreter (§ 107, § 108 BGB).",
+        "points": 5,
+        "explanation": "Minderjährige benötigen für rechtlich nicht ausschließlich vorteilhafte Verträge dieser Größenordnung die Zustimmung der Erziehungsberechtigten."
+    },
+    {
+        "id": 5,
         "type": "matching",
         "field": "Betriebsorganisation & Abrechnung",
         "question": "Ordnen Sie die Abrechnungsregelungen/Gebührenordnungen den jeweiligen Patientengruppen korrekt zu:",
+        "image_url": None,
         "pairs": {
             "GKV-Patient (gesetzlich versichert)": "EBM (Einheitlicher Bewertungsmaßstab)",
             "Privatpatient / Selbstzahler": "GOÄ (Gebührenordnung für Ärzte)",
@@ -123,21 +144,12 @@ MFA_SAMPLE_EXAM = [
         },
         "points": 3,
         "explanation": "GKV-Leistungen werden nach EBM, Privatleistungen nach GOÄ und Arbeitsunfälle über die UV-GOÄ abgerechnet."
-    },
-    {
-        "id": 5,
-        "type": "cloze",
-        "field": "Behandlungsassistenz / Hygiene",
-        "question": "Ergänzen Sie den Lückentext zur Instrumentenaufbereitung: Die Vorgehensweise umfasst gründliche Reinigung, Spülung, Desinfektion, Trocknung, Prüfung auf Sauberkeit/Funktion, Verpackung und abschließend die ____ im Autoklaven zur Erzielung vollständiger Keimfreiheit.",
-        "correct_answer": "Sterilisation",
-        "points": 2,
-        "explanation": "Sterilisation ist das Abtöten aller vermehrungsfähigen Mikroorganismen und Bakteriensporen (Keimfreiheit)."
     }
 ]
 
 # Session State Initialisierung
 if "exam_state" not in st.session_state:
-    st.session_state.exam_state = "SETUP"  # Modi: SETUP, RUNNING, SUBMITTED
+    st.session_state.exam_state = "SETUP"
 if "questions" not in st.session_state:
     st.session_state.questions = MFA_SAMPLE_EXAM
 if "user_answers" not in st.session_state:
@@ -146,34 +158,31 @@ if "start_time" not in st.session_state:
     st.session_state.start_time = None
 if "duration_minutes" not in st.session_state:
     st.session_state.duration_minutes = 45
+if "uploaded_question_images" not in st.session_state:
+    st.session_state.uploaded_question_images = {}
 
 # Header UI
 st.markdown('<div class="main-header">🎓 Pro-Exam Simulator — MFA Abschlussprüfung</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Interaktive, immersive Prüfungssimulation für Medizinische Fachangestellte</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Interaktive, bildgestützte Prüfungssimulation für Medizinische Fachangestellte</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR: PDF/DATEI-ANALYSE & SETUP
+# 3. SIDEBAR: MEDIEN-UPLOAD & DYNAMISCHE BILD-ZUORDNUNG
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.header("📄 Prüfungsunterlagen")
-    uploaded_files = st.file_uploader(
-        "Prüfungsmaterialien hochladen (PDF, PNG, JPG)",
-        type=["pdf", "png", "jpg", "jpeg"],
-        accept_multiple_files=True
+    st.header("🖼️ Aufgaben-Bilder verwalten")
+    st.caption("Laden Sie Abbildungen/Grafiken für bestimmte Fragen hoch:")
+    
+    selected_q_id = st.selectbox(
+        "Zuordnung zu Aufgabe:", 
+        options=[q["id"] for q in st.session_state.questions],
+        format_func=lambda x: f"Aufgabe {x}"
     )
-
-    if uploaded_files:
-        st.success(f"{len(uploaded_files)} Datei(en) geladen.")
-        with st.expander("🔍 Inhalts- & Medienanalyse"):
-            for file in uploaded_files:
-                if file.name.endswith(".pdf"):
-                    try:
-                        reader = pypdf.PdfReader(file)
-                        st.write(f"• **{file.name}**: {len(reader.pages)} Seiten erfasst.")
-                    except Exception as e:
-                        st.error(f"Fehler bei {file.name}: {e}")
-                else:
-                    st.write(f"• **{file.name}**: Bilddatei erfasst.")
+    
+    img_file = st.file_uploader(f"Bild für Aufgabe {selected_q_id} hochladen", type=["png", "jpg", "jpeg"])
+    if img_file:
+        image = Image.open(img_file)
+        st.session_state.uploaded_question_images[selected_q_id] = image
+        st.success(f"Bild für Aufgabe {selected_q_id} erfolgreich verknüpft!")
 
     st.markdown("---")
     st.header("⚙️ Prüfungsparameter")
@@ -190,14 +199,12 @@ with st.sidebar:
 # 4. MODUS 1: SETUP-SCREEN
 # -----------------------------------------------------------------------------
 if st.session_state.exam_state == "SETUP":
-    st.subheader("📋 Prüfungsvorbereitung & Startkonfiguration")
+    st.subheader("📋 Prüfungsvorbereitung & Interaktive Startkonfiguration")
     st.write("""
-    Diese Anwendung simuliert die **MFA-Abschlussprüfung** unter realistischen Bedingungen.
-    
-    **Funktionsumfang:**
-    - ⏱️ **Echter Prüfungstimer** mit Zeiterfassung.
-    - 📝 **Vielfältige Fragetypen**: Single/Multiple Choice, Freitext, Zuordnung & Lückentext.
-    - 📊 **Auswertungs-Dashboard**: Punkte- & Prozentauswertung sowie Schwachstellen-Analyse nach Themengebieten.
+    **Neue interaktive Features:**
+    - 🖼️ **Bildunterstützte Aufgaben**: EKG-Streifen, Laborwerte und Anatomie-Abbildungen direkt in den Aufgaben.
+    - 📤 **Eigene Bilder einbinden**: Über die Sidebar können Sie Aufgaben mit eigenen Dokumenten/Grafiken verknüpfen.
+    - ⏱️ **Echter Prüfungstimer**: Realistische Zeitmessung unter Prüfungsbedingungen.
     """)
 
     st.info(f"**Aktueller Fragenkatalog:** {len(st.session_state.questions)} Aufgaben | **Zeitlimit:** {st.session_state.duration_minutes} Minuten")
@@ -212,12 +219,10 @@ if st.session_state.exam_state == "SETUP":
 # 5. MODUS 2: REALISTISCHE PRÜFUNGSSIMULATION (RUNNING)
 # -----------------------------------------------------------------------------
 elif st.session_state.exam_state == "RUNNING":
-    # Zeitberechnung
     elapsed_time = time.time() - st.session_state.start_time
     total_seconds = st.session_state.duration_minutes * 60
     remaining_seconds = max(0, int(total_seconds - elapsed_time))
 
-    # Timer & Fortschrittsbalken
     col_timer1, col_timer2 = st.columns([3, 1])
     with col_timer1:
         progress = elapsed_time / total_seconds
@@ -240,8 +245,17 @@ elif st.session_state.exam_state == "RUNNING":
         st.markdown(f"**Themenbereich:** `{q['field']}`")
         st.markdown(f"**Aufgabenstellung:** {q['question']}")
 
+        # BILD-INTEGRATION: Prüfung auf verknüpfte Bilder
+        q_id = q["id"]
+        if q_id in st.session_state.uploaded_question_images:
+            st.markdown('<div class="img-container">', unsafe_allow_html=True)
+            st.image(st.session_state.uploaded_question_images[q_id], caption=f"Abbildung zu Aufgabe {idx}", width=450)
+            st.markdown('</div>', unsafe_allow_html=True)
+        elif q.get("image_demo") == "EKG_SCHEMA":
+            st.info("💡 *[Beispiel-Grafik eingebunden: EKG-Abschnitt mit P-, QRS- und T-Wellen]*")
+
         # Fragetypen-Handhabung
-        if q["type"] == "single_choice":
+        if q["type"] in ["single_choice", "image_labeling"]:
             ans = st.radio(
                 "Wählen Sie die richtige Antwort:",
                 options=q["options"],
@@ -274,10 +288,6 @@ elif st.session_state.exam_state == "RUNNING":
                 match_answers[key_term] = sel
             st.session_state.user_answers[q["id"]] = match_answers
 
-        elif q["type"] == "cloze":
-            ans = st.text_input("Fehlender Begriff:", key=f"q_{q['id']}")
-            st.session_state.user_answers[q["id"]] = ans.strip()
-
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("---")
@@ -297,14 +307,13 @@ elif st.session_state.exam_state == "SUBMITTED":
     field_scores = {}
     evaluations = []
 
-    # Auswertungslogik
     for q in st.session_state.questions:
         q_id = q["id"]
         u_ans = st.session_state.user_answers.get(q_id, None)
         earned = 0
         status = "Falsch"
 
-        if q["type"] == "single_choice":
+        if q["type"] in ["single_choice", "image_labeling"]:
             if u_ans == q.get("correct_answer"):
                 earned = q["points"]
                 status = "Richtig"
@@ -321,9 +330,6 @@ elif st.session_state.exam_state == "SUBMITTED":
             if u_ans and len(u_ans.strip()) > 15:
                 earned = q["points"]
                 status = "Richtig (Bewertet)"
-            else:
-                earned = 0
-                status = "Unvollständig"
 
         elif q["type"] == "matching":
             correct_pairs = sum(1 for k, v in q["pairs"].items() if u_ans and u_ans.get(k) == v)
@@ -334,14 +340,8 @@ elif st.session_state.exam_state == "SUBMITTED":
                 earned = round((correct_pairs / len(q["pairs"])) * q["points"], 1)
                 status = "Teilweise Richtig"
 
-        elif q["type"] == "cloze":
-            if u_ans and u_ans.lower() == str(q.get("correct_answer", "")).lower():
-                earned = q["points"]
-                status = "Richtig"
-
         total_earned += earned
 
-        # Zuordnung nach Themengebieten
         field = q["field"]
         if field not in field_scores:
             field_scores[field] = {"earned": 0, "max": 0}
@@ -357,7 +357,6 @@ elif st.session_state.exam_state == "SUBMITTED":
 
     score_pct = round((total_earned / total_achievable) * 100, 1)
 
-    # Top KPI-Metriken
     col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
     col_kpi1.metric("Gesamtergebnis", f"{total_earned} / {total_achievable} Pkt.")
     col_kpi2.metric("Erfolgsquote", f"{score_pct}%")
@@ -365,7 +364,6 @@ elif st.session_state.exam_state == "SUBMITTED":
 
     st.markdown("---")
 
-    # Graphische Schwachstellenanalyse
     col_chart1, col_chart2 = st.columns(2)
     with col_chart1:
         st.markdown("#### 📈 Erfolgsquote nach Themengebieten")
@@ -373,14 +371,7 @@ elif st.session_state.exam_state == "SUBMITTED":
             {"Themengebiet": k, "Erreicht (%)": round((v["earned"]/v["max"])*100, 1)}
             for k, v in field_scores.items()
         ])
-        fig = px.bar(
-            df_chart, 
-            x="Themengebiet", 
-            y="Erreicht (%)", 
-            color="Erreicht (%)", 
-            range_y=[0, 100], 
-            color_continuous_scale="RdYlGn"
-        )
+        fig = px.bar(df_chart, x="Themengebiet", y="Erreicht (%)", color="Erreicht (%)", range_y=[0, 100], color_continuous_scale="RdYlGn")
         st.plotly_chart(fig, use_container_width=True)
 
     with col_chart2:
@@ -394,15 +385,19 @@ elif st.session_state.exam_state == "SUBMITTED":
 
     st.markdown("---")
 
-    # Detail-Musterlösung (Mit sicherem Schlüssel-Zugriff gegen KeyError)
     st.markdown("### 🔍 Detaillierte Musterlösung & Erklärung")
     for item in evaluations:
         q = item["question"]
         with st.expander(f"Aufgabe {q['id']}: {q['question'][:75]}... [{item['status']} - {item['earned']}/{q['points']} Pkt.]"):
             st.write(f"**Aufgabenstellung:** {q['question']}")
+            
+            # Bild in Auswertung anzeigen
+            q_id = q["id"]
+            if q_id in st.session_state.uploaded_question_images:
+                st.image(st.session_state.uploaded_question_images[q_id], caption=f"Abbildung zu Aufgabe {q_id}", width=350)
+
             st.write(f"**Ihre Antwort:** `{item['user_ans']}`")
             
-            # Dynamische Handhabung je nach Fragetyp
             if q["type"] == "matching":
                 st.write("**Musterlösung (Zuordnungen):**")
                 for key_term, val_term in q["pairs"].items():
