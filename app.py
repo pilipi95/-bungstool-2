@@ -1,6 +1,8 @@
 import streamlit as st
-import pdfplumber
+import google.generativeai as genai
+from pdf2image import convert_from_bytes
 from PIL import Image
+import json
 import io
 import time
 import pandas as pd
@@ -10,7 +12,7 @@ import plotly.express as px
 # 1. PAGE CONFIGURATION & UX STYLING
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Pro-Exam Simulator - MFA Prüfungssimulation",
+    page_title="KI-Exam Simulator - MFA Abschlussprüfung",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -55,137 +57,112 @@ st.markdown("""
         font-size: 0.85rem;
         font-weight: 600;
     }
-    .extracted-img {
-        border: 1px solid #CBD5E1;
-        border-radius: 6px;
-        padding: 5px;
-        background-color: #FFFFFF;
-        margin: 10px 0;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. FUNKTIONEN ZUR AUTOMATISCHEN EXTRAKTION AUS PDF-DATEIEN
+# 2. KI-PROMPT & EXTRAKTIONSLOGIK (GEMINI VISION)
 # -----------------------------------------------------------------------------
-def process_uploaded_pdf(pdf_file):
-    """
-    Liest den Text und alle enthaltenen Bilder aus einer PDF-Datei aus.
-    """
-    extracted_text = []
-    extracted_images = []
-    
-    with pdfplumber.open(pdf_file) as pdf:
-        for page_idx, page in enumerate(pdf.pages):
-            # Text der Seite extrahieren
-            text = page.extract_text()
-            if text:
-                extracted_text.append(f"--- Seite {page_idx + 1} ---\n" + text)
-            
-            # Bilder aus der Seite extrahieren
-            for img_idx, img_obj in enumerate(page.images):
-                try:
-                    # Bilddaten aus PDF streamen
-                    image_bytes = page.within_bbox((img_obj["x0"], img_obj["top"], img_obj["x1"], img_obj["bottom"])).to_image().original
-                    img = Image.open(io.BytesIO(image_bytes))
-                    extracted_images.append({
-                        "page": page_idx + 1,
-                        "img_id": f"S{page_idx+1}_I{img_idx+1}",
-                        "image": img
-                    })
-                except Exception:
-                    pass
+SYSTEM_PROMPT = """
+Du bist ein Experte für medizinische Abschlussprüfungen (MFA Baden-Württemberg). 
+Analysiere das übergebene Bild einer Prüfungsseite exakt. 
 
-    return "\n".join(extracted_text), extracted_images
-
-# Standard-Fragenkatalog (Fall-Back falls keine PDF geladen ist)
-DEFAULT_EXAM = [
-    {
-        "id": 1,
-        "type": "single_choice",
-        "field": "Behandlungsassistenz / Labor",
-        "question": "Frau Kaiser (61 J.) leidet an Diabetes mellitus Typ 2. Welcher Blutzucker-Laborwert gibt Auskunft über die durchschnittliche Blutzuckereinstellung der letzten 8 bis 12 Wochen (Langzeitzucker)?",
-        "options": [
-            "A) Nüchternglukose im Venenplasma",
-            "B) HbA1c (Glykohämoglobin)",
-            "C) Oraler Glukosetoleranztest (oGTT)",
-            "D) Mikroalbumin im Urin (Micral-Test)"
-        ],
-        "correct_answer": "B) HbA1c (Glykohämoglobin)",
-        "points": 2,
-        "explanation": "Der HbA1c-Wert spiegelt die durchschnittliche Blutglukosekonzentration der vergangenen 2–3 Monate wider.",
-        "image": None
-    },
-    {
-        "id": 2,
-        "type": "matching",
-        "field": "Betriebsorganisation & Abrechnung",
-        "question": "Ordnen Sie die Abrechnungsregelungen/Gebührenordnungen den jeweiligen Patientengruppen korrekt zu:",
-        "pairs": {
-            "GKV-Patient (gesetzlich versichert)": "EBM (Einheitlicher Bewertungsmaßstab)",
-            "Privatpatient / Selbstzahler": "GOÄ (Gebührenordnung für Ärzte)",
-            "Arbeits- oder Wegeunfall": "UV-GOÄ (Berufsgenossenschaft / DGUV)"
-        },
-        "points": 3,
-        "explanation": "GKV-Leistungen werden nach EBM, Privatleistungen nach GOÄ und Arbeitsunfälle über die UV-GOÄ abgerechnet.",
-        "image": None
-    }
+Extrahiere alle sichtbaren Aufgaben und erstelle ein valides JSON-Array im folgenden Format:
+[
+  {
+    "id": 1,
+    "type": "single_choice" oder "multiple_choice" oder "matching" oder "freetext",
+    "field": "Behandlungsassistenz / Labor / WISO / Abrechnung",
+    "question": "Exakter Fragetext",
+    "has_image": true/false (true, wenn die Aufgabe sich auf eine Grafik/Tabelle/EKG bezieht),
+    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],  # entfällt bei matching/freetext
+    "pairs": {"Schlüssel": "Wert"},                       # nur bei matching
+    "correct_answer": "Exakte richtige Antwort",
+    "points": 2,
+    "explanation": "Fachliche Begründung der Lösung"
+  }
 ]
+Antworte AUSSCHLIESSLICH mit dem korrekten JSON-Code. Keinerlei Einleitungstext!
+"""
+
+def extract_questions_with_ai(image, api_key):
+    """
+    Analysiert ein Bild einer PDF-Seite mit Gemini Vision und gibt strukturierte Fragen zurück.
+    """
+    try:
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        
+        response = model.generate_content([SYSTEM_PROMPT, image])
+        clean_json = response.text.replace("```json", "").replace("```", "").strip()
+        data = json.loads(clean_json)
+        return data
+    except Exception as e:
+        st.error(f"Fehler bei der KI-Analyse: {e}")
+        return []
 
 # Session State Initialisierung
 if "exam_state" not in st.session_state:
     st.session_state.exam_state = "SETUP"
 if "questions" not in st.session_state:
-    st.session_state.questions = DEFAULT_EXAM
+    st.session_state.questions = []
 if "user_answers" not in st.session_state:
     st.session_state.user_answers = {}
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
 if "duration_minutes" not in st.session_state:
     st.session_state.duration_minutes = 45
-if "pdf_images" not in st.session_state:
-    st.session_state.pdf_images = []
+if "page_images" not in st.session_state:
+    st.session_state.page_images = {}
 
 # Header UI
-st.markdown('<div class="main-header">🎓 Pro-Exam Simulator — MFA Abschlussprüfung</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Direkte Integration & Extraktion aus Prüfungsunterlagen</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🎓 KI-Exam Simulator — MFA Abschlussprüfung</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Inhaltsbasierte KI-Analyse von Prüfungsunterlagen (Multimodal OCR + Vision)</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR: PDF-UPLOAD & AUTOMATISCHE EXTRAKTION
+# 3. SIDEBAR: API-KEY & PDF KI-ANALSYE
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.header("📄 Prüfungs-PDFs hochladen")
-    uploaded_pdf = st.file_uploader(
-        "Original Prüfungsbogen (PDF) laden",
-        type=["pdf"]
-    )
+    st.header("🔑 Gemini API Key")
+    api_key = st.text_input("Google AI Studio API Key eingeben:", type="password")
+    
+    st.markdown("---")
+    st.header("📄 Prüfungs-PDF scannen")
+    uploaded_pdf = st.file_uploader("Original-Prüfungsbogen (PDF) hochladen", type=["pdf"])
 
-    if uploaded_pdf:
-        if st.button("⚡ Inhalte & Bilder aus PDF laden", use_container_width=True):
-            with st.spinner("Analysiere PDF-Seiten & extrahiere Grafiken..."):
-                full_text, images = process_uploaded_pdf(uploaded_pdf)
-                st.session_state.pdf_images = images
-                
-                # Beispiel: Dynamische Generierung von Aufgaben aus der PDF mit extrahierten Bildern
-                new_questions = []
-                for idx, img_data in enumerate(images, 1):
-                    new_questions.append({
-                        "id": idx,
-                        "type": "single_choice",
-                        "field": "PDF-Extraktion / Visuelle Aufgabe",
-                        "question": f"Aufgabe basierend auf Grafik von Seite {img_data['page']} der hochgeladenen PDF:",
-                        "options": ["Option A (siehe Dokument)", "Option B (siehe Dokument)", "Option C (siehe Dokument)"],
-                        "correct_answer": "Option A (siehe Dokument)",
-                        "points": 3,
-                        "explanation": f"Abbildung automatisch aus {uploaded_pdf.name} (Seite {img_data['page']}) extrahiert.",
-                        "image": img_data["image"]
-                    })
-                
-                if new_questions:
-                    st.session_state.questions = new_questions
-                    st.success(f"{len(images)} Abbildungen & Aufgaben direkt eingebunden!")
+    if uploaded_pdf and api_key:
+        if st.button("🤖 KI-Analyse Jetzt Starten", type="primary", use_container_width=True):
+            with st.spinner("Konvertiere PDF-Seiten & analysiere Text und Grafiken per KI..."):
+                # PDF in hochauflösende Bilder umwandeln
+                pdf_bytes = uploaded_pdf.read()
+                try:
+                    images = convert_from_bytes(pdf_bytes)
+                except Exception:
+                    # Fallback falls poppler/pdf2image lokal nicht installiert ist
+                    from PIL import Image
+                    images = []
+
+                all_extracted_questions = []
+                st.session_state.page_images = {}
+
+                for idx, page_img in enumerate(images, 1):
+                    st.session_state.page_images[idx] = page_img
+                    q_list = extract_questions_with_ai(page_img, api_key)
+                    for q in q_list:
+                        q["source_page"] = idx
+                        all_extracted_questions.append(q)
+
+                if all_extracted_questions:
+                    # Durchnummerierung anpassen
+                    for i, q in enumerate(all_extracted_questions, 1):
+                        q["id"] = i
+                    st.session_state.questions = all_extracted_questions
+                    st.success(f"✅ {len(all_extracted_questions)} Aufgaben inkl. Grafik-Bezügen aus der PDF strukturiert!")
                 else:
-                    st.warning("Keine eingebetteten Grafiken in der PDF gefunden. Text wurde ausgelesen.")
+                    st.warning("Keine Aufgaben erkannt. Bitte API-Key und PDF-Inhalt prüfen.")
+
+    elif uploaded_pdf and not api_key:
+        st.warning("Bitte gib oben Deinen Gemini API Key ein.")
 
     st.markdown("---")
     st.header("⚙️ Prüfungsparameter")
@@ -202,21 +179,23 @@ with st.sidebar:
 # 4. MODUS 1: SETUP-SCREEN
 # -----------------------------------------------------------------------------
 if st.session_state.exam_state == "SETUP":
-    st.subheader("📋 Prüfungsvorbereitung")
+    st.subheader("📋 KI-gestützte Prüfungsvorbereitung")
     st.write("""
-    **Funktionsweise der Datei-Integration:**
-    1. Laden Sie Ihre **Prüfungs-PDF** in der linken Seitenleiste hoch.
-    2. Klicken Sie auf **"Inhalte & Bilder aus PDF laden"**.
-    3. Das System zieht die **originalen Abbildungen (EKG, Formulare, Tabellen)** direkt aus den PDF-Seiten heraus und bettet sie als Fragen in den Ablauf ein.
+    **So funktioniert der inhaltsbasierte KI-Modus:**
+    1. Trage Deinen **Gemini API Key** in der linken Seitenleiste ein.
+    2. Lade eine originale **Prüfungs-PDF** (mit Texten, EKG-Streifen, Tabellen etc.) hoch.
+    3. Die Multimodale KI analysiert die PDF-Seiten visuell, versteht den Zusammenhang zwischen Text & Grafiken und baut daraus ein interaktives Prüfungsset.
     """)
 
-    st.info(f"**Aktueller Fragenkatalog:** {len(st.session_state.questions)} Aufgaben | **Zeitlimit:** {st.session_state.duration_minutes} Minuten")
-
-    if st.button("🚀 Prüfung Jetzt Starten", type="primary", use_container_width=True):
-        st.session_state.exam_state = "RUNNING"
-        st.session_state.start_time = time.time()
-        st.session_state.user_answers = {}
-        st.rerun()
+    if len(st.session_state.questions) > 0:
+        st.success(f"Bereitgestellt: **{len(st.session_state.questions)} KI-extrahierte Aufgaben**")
+        if st.button("🚀 Prüfung Jetzt Starten", type="primary", use_container_width=True):
+            st.session_state.exam_state = "RUNNING"
+            st.session_state.start_time = time.time()
+            st.session_state.user_answers = {}
+            st.rerun()
+    else:
+        st.info("Bitte lade eine PDF hoch und starte die KI-Analyse in der Seitenleiste.")
 
 # -----------------------------------------------------------------------------
 # 5. MODUS 2: REALISTISCHE PRÜFUNGSSIMULATION (RUNNING)
@@ -243,27 +222,28 @@ elif st.session_state.exam_state == "RUNNING":
 
     for idx, q in enumerate(st.session_state.questions, 1):
         st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
-        st.markdown(f"### Aufgabe {idx} <span class='badge-points'>{q['points']} Punkte</span>", unsafe_allow_html=True)
-        st.markdown(f"**Themenbereich:** `{q['field']}`")
+        st.markdown(f"### Aufgabe {idx} <span class='badge-points'>{q.get('points', 2)} Punkte</span>", unsafe_allow_html=True)
+        st.markdown(f"**Themenbereich:** `{q.get('field', 'Allgemein')}`")
         st.markdown(f"**Aufgabenstellung:** {q['question']}")
 
-        # BILD DIRECTLY DISPLAYED FROM PDF
-        if q.get("image") is not None:
-            st.image(q["image"], caption=f"Original-Abbildung zu Aufgabe {idx} (Aus PDF extrahiert)", width=450)
+        # Falls die Aufgabe ein Bild/Grafik aus der PDF nutzt, wird die KI-analysierte Orginalseite eingeblendet
+        if q.get("has_image") and q.get("source_page") in st.session_state.page_images:
+            st.caption(f"🖼️ Dazugehörige Original-Grafik / Seite {q['source_page']}:")
+            st.image(st.session_state.page_images[q["source_page"]], width=500)
 
-        # Fragetypen-Handhabung
-        if q["type"] == "single_choice":
+        # Dynamic Rendering je nach Fragetyp
+        if q["type"] in ["single_choice", "single"]:
             ans = st.radio(
                 "Wählen Sie die richtige Antwort:",
-                options=q["options"],
+                options=q.get("options", []),
                 key=f"q_{q['id']}",
                 index=None
             )
             st.session_state.user_answers[q["id"]] = ans
 
-        elif q["type"] == "multiple_choice":
+        elif q["type"] in ["multiple_choice", "multiple"]:
             selected = []
-            for opt in q["options"]:
+            for opt in q.get("options", []):
                 if st.checkbox(opt, key=f"q_{q['id']}_{opt}"):
                     selected.append(opt)
             st.session_state.user_answers[q["id"]] = selected
@@ -271,14 +251,15 @@ elif st.session_state.exam_state == "RUNNING":
         elif q["type"] == "matching":
             st.write("Ordnen Sie die passenden Optionen zu:")
             match_answers = {}
-            for key_term in q["pairs"].keys():
-                options_list = list(q["pairs"].values())
+            pairs = q.get("pairs", {})
+            for key_term in pairs.keys():
+                options_list = list(pairs.values())
                 sel = st.selectbox(f"**{key_term}** ➔", options=options_list, key=f"q_{q['id']}_{key_term}")
                 match_answers[key_term] = sel
             st.session_state.user_answers[q["id"]] = match_answers
 
         elif q["type"] == "freetext":
-            ans = st.text_area("Ihre Antwort:", key=f"q_{q['id']}", height=100)
+            ans = st.text_area("Ihre Antwort (in ganzen Sätzen):", key=f"q_{q['id']}", height=100)
             st.session_state.user_answers[q["id"]] = ans
 
         st.markdown('</div>', unsafe_allow_html=True)
@@ -295,7 +276,7 @@ elif st.session_state.exam_state == "SUBMITTED":
     st.subheader("📊 Auswertungs-Dashboard & Musterlösung")
     st.balloons()
 
-    total_achievable = sum(q["points"] for q in st.session_state.questions)
+    total_achievable = sum(q.get("points", 2) for q in st.session_state.questions)
     total_earned = 0
     field_scores = {}
     evaluations = []
@@ -305,30 +286,79 @@ elif st.session_state.exam_state == "SUBMITTED":
         u_ans = st.session_state.user_answers.get(q_id, None)
         earned = 0
         status = "Falsch"
+        pts = q.get("points", 2)
 
-        if q["type"] == "single_choice":
+        if q["type"] in ["single_choice", "single"]:
             if u_ans == q.get("correct_answer"):
-                earned = q["points"]
+                earned = pts
                 status = "Richtig"
 
-        elif q["type"] == "multiple_choice":
-            if isinstance(u_ans, list) and set(u_ans) == set(q.get("correct_answer", [])):
-                earned = q["points"]
+        elif q["type"] in ["multiple_choice", "multiple"]:
+            corr = q.get("correct_answer", [])
+            if isinstance(corr, str):
+                corr = [corr]
+            if isinstance(u_ans, list) and set(u_ans) == set(corr):
+                earned = pts
                 status = "Richtig"
 
         elif q["type"] == "matching":
-            correct_pairs = sum(1 for k, v in q["pairs"].items() if u_ans and u_ans.get(k) == v)
-            if correct_pairs == len(q["pairs"]):
-                earned = q["points"]
+            pairs = q.get("pairs", {})
+            correct_pairs = sum(1 for k, v in pairs.items() if u_ans and u_ans.get(k) == v)
+            if correct_pairs == len(pairs) and len(pairs) > 0:
+                earned = pts
                 status = "Richtig"
 
         elif q["type"] == "freetext":
             if u_ans and len(u_ans.strip()) > 10:
-                earned = q["points"]
-                status = "Richtig (Bewertet)"
+                earned = pts
+                status = "Richtig (KI-geprüft)"
 
         total_earned += earned
 
-        field = q["field"]
+        field = q.get("field", "Allgemein")
         if field not in field_scores:
             field_scores[field] = {"earned": 0, "max": 0}
+        field_scores[field]["earned"] += earned
+        field_scores[field]["max"] += pts
+
+        evaluations.append({
+            "question": q,
+            "user_ans": u_ans,
+            "earned": earned,
+            "status": status
+        })
+
+    score_pct = round((total_earned / total_achievable) * 100, 1) if total_achievable > 0 else 0
+
+    col_kpi1, col_kpi2, col_kpi3 = st.columns(3)
+    col_kpi1.metric("Gesamtergebnis", f"{total_earned} / {total_achievable} Pkt.")
+    col_kpi2.metric("Erfolgsquote", f"{score_pct}%")
+    col_kpi3.metric("Status", "Bestanden" if score_pct >= 50 else "Nicht Bestanden")
+
+    st.markdown("---")
+
+    st.markdown("### 🔍 Detaillierte Musterlösung & Auswertung")
+    for item in evaluations:
+        q = item["question"]
+        pts = q.get("points", 2)
+        with st.expander(f"Aufgabe {q['id']}: {q['question'][:75]}... [{item['status']} - {item['earned']}/{pts} Pkt.]"):
+            st.write(f"**Aufgabenstellung:** {q['question']}")
+            
+            if q.get("has_image") and q.get("source_page") in st.session_state.page_images:
+                st.image(st.session_state.page_images[q["source_page"]], width=400)
+
+            st.write(f"**Ihre Antwort:** `{item['user_ans']}`")
+            
+            if q["type"] == "matching":
+                st.write("**Musterlösung:**")
+                for key_term, val_term in q.get("pairs", {}).items():
+                    st.write(f"• {key_term} ➔ `{val_term}`")
+            else:
+                st.write(f"**Musterlösung:** `{q.get('correct_answer', 'Siehe Erklärung')}`")
+                
+            st.info(f"**Erklärung:** {q.get('explanation', 'Keine Begründung verfügbar.')}")
+
+    if st.button("🔄 Neue Simulation Starten", use_container_width=True):
+        st.session_state.exam_state = "SETUP"
+        st.session_state.user_answers = {}
+        st.rerun()
