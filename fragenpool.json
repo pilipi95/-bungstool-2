@@ -224,5 +224,313 @@
     },
     "points": 4,
     "explanation": "Brustschmerz/Ausstrahlung = Infarkt; FAST-Symptome = Schlaganfall; Giemen/Brummen bei Ausatmung = Asthma; Kaltschweiß/Zittern = Hypoglykämie."
+  },
+  {
+    "id": 16,
+    "type": "single_choice",
+    "field": "Behandlungsassistenz / Labor",
+    "question": "Um Fehlermessungen bei der Blutsenkungsgeschwindigkeit (BSG) nach Westergren zu vermeiden, muss das Blut-Antikoagulans-Verhältnis exakt eingehalten werden. Welches Mischungsverhältnis von Natriumcitrat zu Venenblut ist vorgeschrieben?",
+    "options": [
+      "A) 1 Teil Natriumcitrat + 4 Teile Blut (1:4)",
+      "B) 1 Teil Natriumcitrat + 9 Teile Blut (1:9)",
+      "C) 1 Teil Natriumcitrat + 1 Teil Blut (1:1)",
+      "D) 1 Teil EDTA + 5 Teile Blut (1:5)"
+    ],
+    "correct_answer": "A) 1 Teil Natriumcitrat + 4 Teile Blut (1:4)",
+    "points": 2,
+    "explanation": "Für die BSG gilt das Mischungsverhältnis 1:4 (1 Teil Citrat, 4 Teile Blut). Für Gerinnungsuntersuchungen (z.B. Quick/INR, PTT) gilt hingegen das Verhältnis 1:9."
+  },
+  {
+    "id": 17,
+    "type": "multiple_choice",
+    "field": "Behandlungsassistenz / Impfungen & Infektionsschutz",
+    "question": "Welche der folgenden Impfungen gehören zu den Standardimpfungen für Erwachsene gemäß den Empfehlungen der Ständigen Impfkommission (STIKO)? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Tetanus (Wundstarrkrampf)",
+      "B) Diphtherie",
+      "C) Pertussis (Keuchhusten) - als Auffrischung mit der nächsten Tetanus-Impfung",
+      "D) Hepatitis A für die gesamte Allgemeinbevölkerung"
+    ],
+    "correct_answer": [
+      "A) Tetanus (Wundstarrkrampf)",
+      "B) Diphtherie",
+      "C) Pertussis (Keuchhusten) - als Auffrischung mit der nächsten Tetanus-Impfung"
+    ],
+    "points": 3,
+    "explanation": "Tetanus, Diphtherie und Pertussis gehören zu den Standard-Auffrischimpfungen. Hepatitis A ist eine Indikations- bzw. Reiseimpfung und keine generelle Standardimpfung für die gesamte Bevölkerung."
+  },
+  {
+    "id": 18,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Neurologie & Anatomie",
+    "question": "Ordnen Sie die Hirnareale ihren primären Funktionsbereichen zu:",
+    "pairs": {
+      "Großhirn (Cerebrum)": "Höhere geistige Funktionen, Gedächtnis, Wahrnehmung",
+      "Kleinhirn (Cerebellum)": "Koordination von Bewegungen und Gleichgewicht",
+      "Nachhirn / Verlängertes Mark (Medulla oblongata)": "Steuerung lebenswichtiger Reflexe (Atmung, Kreislauf, Schlucken)",
+      "Hypothalamus": "Regulation von Körpertemperatur, Wasserhaushalt und Hormonsystem"
+    },
+    "points": 4,
+    "explanation": "Großhirn = Denken/Sensorik, Kleinhirn = Motorik/Gleichgewicht, Medulla oblongata = Vitalzentren, Hypothalamus = Homöostase/Vegetativum."
+  },
+  {
+    "id": 19,
+    "type": "single_choice",
+    "field": "Betriebsorganisation & Abrechnung",
+    "question": "Ein GKV-Patient benötigt eine medizinisch notwendige Hausbesuchsbehandlung durch den Arzt. Welche EBM-Gebührenordnungsposition (GOP) ist für einen dringenden Hausbesuch einzusetzen?",
+    "options": [
+      "A) GOP 01410",
+      "B) GOP 03000",
+      "C) GOP 01411",
+      "D) GOP 03230"
+    ],
+    "correct_answer": "A) GOP 01410",
+    "points": 2,
+    "explanation": "GOP 01410 ist der unangemeldete/dringende Besuchsgebührentatbestand im EBM."
+  },
+  {
+    "id": 20,
+    "type": "multiple_choice",
+    "field": "Betriebsorganisation & Praxisverwaltung",
+    "question": "Welche Anforderungen stellt die Datenschutz-Grundverordnung (DSGVO) an die Speicherung und Weitergabe von Patientendaten in der Praxis? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Die Weitergabe von Behandlungsdaten an Dritte erfordert grundsätzlich eine schriftliche Schweigepflichtentbindung oder eine gesetzliche Grundlage.",
+      "B) Bildschirme an der Anmeldung müssen vor Einblicken Unbefugter geschützt sein (Sichtschutzfolie/Ausrichtung).",
+      "C) Patienten haben das Recht auf Auskunft über die zu ihrer Person gespeicherten Daten.",
+      "D) Arztpraxen dürfen Patientendaten uneingeschränkt zu Marketingzwecken nutzen."
+    ],
+    "correct_answer": [
+      "A) Die Weitergabe von Behandlungsdaten an Dritte erfordert grundsätzlich eine schriftliche Schweigepflichtentbindung oder eine gesetzliche Grundlage.",
+      "B) Bildschirme an der Anmeldung müssen vor Einblicken Unbefugter geschützt sein (Sichtschutzfolie/Ausrichtung).",
+      "C) Patienten haben das Recht auf Auskunft über die zu ihrer Person gespeicherten Daten."
+    ],
+    "points": 3,
+    "explanation": "Die Zweckbindung der Datenverarbeitung untersagt die Nutzung von Patientendaten für Marketing ohne explizite, freiwillige Einwilligung."
+  },
+  {
+    "id": 21,
+    "type": "matching",
+    "field": "Betriebsorganisation & Abrechnung / GOÄ",
+    "question": "Ordnen Sie den Steigerungssätzen der GOÄ die passenden Bedingungen zu:",
+    "pairs": {
+      "1,0-facher Satz": "Mindestsatz / Basissatz",
+      "2,3-facher Satz": "Regelhöchstsatz für ärztliche Leistungen bei durchschnittlichem Aufwand",
+      "3,5-facher Satz": "Höchstsatz für ärztliche Leistungen (erfordert schriftliche Begründung)",
+      "1,15-facher Satz": "Regelhöchstsatz für medizinisch-technische Laborleistungen"
+    },
+    "points": 4,
+    "explanation": "Im GOÄ-System gilt 2,3 als Regelhöchstsatz für persönliche ärztliche Leistungen. Ab 2,35 bis 3,5 ist eine patientenbezogene Begründung zwingend."
+  },
+  {
+    "id": 22,
+    "type": "freetext",
+    "field": "Behandlungsassistenz / Wundversorgung",
+    "question": "Beschreiben Sie die drei Phasen der sekundären Wundheilung in der richtigen Reihenfolge.",
+    "options": [],
+    "correct_answer": "1. Exsudationsphase (Reinigungsphase): Blutstillung, Fibrinbildung, Wundreinigung durch Phagozytose.\n2. Granulationsphase (Proliferationsphase): Aufbau von neuem Gefäß- und Bindegewebe (Granulationsgewebe).\n3. Epithelisierungsphase (Regenerationsphase): Wundverschluss durch Zelleinwanderung von den Wundrändern und Narbenbildung.",
+    "points": 5,
+    "explanation": "Die Wundheilung verläuft immer in den drei aufeinanderfolgenden Phasen: Exsudation, Granulation und Epithelisierung."
+  },
+  {
+    "id": 23,
+    "type": "single_choice",
+    "field": "Wirtschafts- und Betriebskunde (WISO)",
+    "question": "Ab welcher Beschäftigtenzahl in einem Betrieb muss ein Betriebsrat gewählt werden können, sofern die Mitarbeiter dies wünschen (gemäß Betriebsverfassungsgesetz)?",
+    "options": [
+      "A) Ab mindestens 5 ständigen wahlberechtigten Arbeitnehmern",
+      "B) Ab mindestens 10 Mitarbeitern",
+      "C) Ab mindestens 20 Mitarbeitern",
+      "D) Ab 50 Mitarbeitern"
+    ],
+    "correct_answer": "A) Ab mindestens 5 ständigen wahlberechtigten Arbeitnehmern",
+    "points": 2,
+    "explanation": "In Betrieben mit mindestens 5 ständigen wahlberechtigten Arbeitnehmern (von denen 3 wählbar sein müssen) werden Betriebsräte gewählt (§ 1 BetrVG)."
+  },
+  {
+    "id": 24,
+    "type": "multiple_choice",
+    "field": "Wirtschafts- und Betriebskunde (WISO)",
+    "question": "Welche Regelungen bezüglich des Mutterschutzes laut Mutterschutzgesetz (MuSchG) sind korrekt? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Schutzfrist vor der Entbindung: grundsätzlich 6 Wochen",
+      "B) Absolute Beschäftigungsverbotsfrist nach der Entbindung: grundsätzlich 8 Wochen (12 Wochen bei Früh-/Mehrlingsgeburten)",
+      "C) Während der Schwangerschaft und bis 4 Monate nach der Entbindung besteht ein Sonderkündigungsschutz für die Arbeitnehmerin.",
+      "D) Schwangere Frauen dürfen uneingeschränkt Nacht- und Sonntagsarbeit leisten."
+    ],
+    "correct_answer": [
+      "A) Schutzfrist vor der Entbindung: grundsätzlich 6 Wochen",
+      "B) Absolute Beschäftigungsverbotsfrist nach der Entbindung: grundsätzlich 8 Wochen (12 Wochen bei Früh-/Mehrlingsgeburten)",
+      "C) Während der Schwangerschaft und bis 4 Monate nach der Entbindung besteht ein Sonderkündigungsschutz für die Arbeitnehmerin."
+    ],
+    "points": 3,
+    "explanation": "Nacht- und Mehrarbeit sowie Sonn- und Feiertagsarbeit sind für Schwangere nach dem MuSchG grundsätzlich untersagt (Ausnahmen nur unter strengen Auflagen)."
+  },
+  {
+    "id": 25,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Gastroenterologie & Endokrinologie",
+    "question": "Ordnen Sie den Hormonen das jeweilige Bildungsorgan bzw. die Drüse zu:",
+    "pairs": {
+      "Insulin": "Langerhans-Inseln der Bauchspeicheldrüse (Beta-Zellen)",
+      "Thyroxin (T4)": "Schilddrüse",
+      "Kortisol": "Nebennierenrinde",
+      "TSH (Thyreotropin)": "Hypophysenvorderlappen"
+    },
+    "points": 4,
+    "explanation": "Insulin entsteht im Pankreas, T4 in der Schilddrüse, Kortisol in der Nebennierenrinde und das Steuerhormon TSH in der Hypophyse."
+  },
+  {
+    "id": 26,
+    "type": "single_choice",
+    "field": "Behandlungsassistenz / Ergometrie",
+    "question": "Bei welchen der folgenden Befunde muss eine Belastungs-EKG-Untersuchung (Ergometrie) sofort abgebrochen werden?",
+    "options": [
+      "A) Leichtes Schwitzen des Patienten",
+      "B) Blutdruckanstieg auf 150/90 mmHg",
+      "C) Auftreten von Angina-Pectoris-Beschwerden oder ST-Strecken-Senkungen im EKG",
+      "D) Erreichen von 50 % der Soll-Herzfrequenz"
+    ],
+    "correct_answer": "C) Auftreten von Angina-Pectoris-Beschwerden oder ST-Strecken-Senkungen im EKG",
+    "points": 2,
+    "explanation": "Abburchkriterien sind u.a. Angina Pectoris, ST-Hebungen/-Senkungen, schwere Herzrhythmusstörungen, Atemnot, Schwindel oder extremer Blutdruckanstieg (> 230/120 mmHg)."
+  },
+  {
+    "id": 27,
+    "type": "multiple_choice",
+    "field": "Behandlungsassistenz / Injektionen & Punktionen",
+    "question": "Welche Injektionsarten erfordern zwingend eine Aspiration vor der Applikation des Medikaments? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Intramuskuläre Injektion (i.m.)",
+      "B) Subkutane Injektion von Heparin im Bauchbereich",
+      "C) Intraveneröse Injektion (i.v. - zur Lagekontrolle der Kanüle in der Vene)",
+      "D) Intrakutane Injektion (i.c.) bei Allergietests"
+    ],
+    "correct_answer": [
+      "A) Intramuskuläre Injektion (i.m.)",
+      "C) Intraveneröse Injektion (i.v. - zur Lagekontrolle der Kanüle in der Vene)"
+    ],
+    "points": 3,
+    "explanation": "Bei i.m.-Injektionen schützt die Aspiration vor versehentlicher intravasaler Applikation depotartig wirkender Stoffe. Bei Heparin s.c. darf keinesfalls aspiriert werden, um Hämatome zu vermeiden."
+  },
+  {
+    "id": 28,
+    "type": "matching",
+    "field": "Betriebsorganisation & Schriftverkehr",
+    "question": "Ordnen Sie die Aufbewahrungsfristen nach den rechtlichen Vorgaben den medizinischen Unterlagen zu:",
+    "pairs": {
+      "Allgemeine Patientendokumentation / Karteikarten": "10 Jahre nach Abschluss der Behandlung",
+      "Röntgenbilder und Aufzeichnungen": "10 Jahre nach der letzten Untersuchung",
+      "DTA-Abrechnungsunterlagen (Kassenabrechnung)": "10 Jahre",
+      "Befunde nach Strahlentherapie / Durchleuchtung": "30 Jahre"
+    },
+    "points": 4,
+    "explanation": "Musteraufbewahrungsfristen: 10 Jahre für Patientendaten/Röntgenbilder; 30 Jahre bei Strahlentherapie und Dokumentation nach Transfusionsgesetz."
+  },
+  {
+    "id": 29,
+    "type": "single_choice",
+    "field": "Gemeinschaftskunde",
+    "question": "Welches Grundrecht garantiert Artikel 1 Abs. 1 des Grundgesetzes der Bundesrepublik Deutschland?",
+    "options": [
+      "A) Meinungsfreiheit",
+      "B) Unverletzlichkeit der Wohnung",
+      "C) Die Würde des Menschen ist unantastbar",
+      "D) Gleicher Zugang zu allen öffentlichen Ämtern"
+    ],
+    "correct_answer": "C) Die Würde des Menschen ist unantastbar",
+    "points": 2,
+    "explanation": "Art. 1 Abs. 1 GG: 'Die Würde des Menschen ist unantastbar. Sie zu achten und zu schützen ist Verpflichtung aller staatlichen Gewalt.'"
+  },
+  {
+    "id": 30,
+    "type": "multiple_choice",
+    "field": "Behandlungsassistenz / Urindiagnostik",
+    "question": "Welche Parameter können mit einem handelsüblichen Urin-Teststreifen (Mehrfachstick) nachgewiesen werden? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Glukose",
+      "B) Protein (Eiweiß)",
+      "C) Leukozyten und Nitrit",
+      "D) Cholesterin"
+    ],
+    "correct_answer": [
+      "A) Glukose",
+      "B) Protein (Eiweiß)",
+      "C) Leukozyten und Nitrit"
+    ],
+    "points": 3,
+    "explanation": "Cholesterin wird im Blutserum bestimmt und scheidet sich nicht messbar im Urin über Standard-Teststreifen ab."
+  },
+  {
+    "id": 31,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Orthopädie & Traumatologie",
+    "question": "Ordnen Sie die Gelenkformen den korrekten Beispielen im menschlichen Körper zu:",
+    "pairs": {
+      "Kugelgelenk": "Hüftgelenk / Schultergelenk",
+      "Scharniergelenk": "Ellenbogen- oder Fingendassgelenk",
+      "Eppensattelgelenk / Sattelgelenk": "Daumensattelgelenk",
+      "Dreh-/Zapfengelenk": "Atlas-Axial-Gelenk (Kopfgelenk)"
+    },
+    "points": 4,
+    "explanation": "Hüfte/Schulter = Kugelgelenk; Fingerzwischengelenke = Scharnier; Daumenbasis = Sattelgelenk; Atlas/Axis = Zapfen-/Drehgelenk."
+  },
+  {
+    "id": 32,
+    "type": "freetext",
+    "field": "Wirtschafts- und Betriebskunde (WISO)",
+    "question": "Erklären Sie den Unterschied zwischen einer ordentlichen Kündigung und einer außerordentlichen Kündigung eines Arbeitsvertrages.",
+    "options": [],
+    "correct_answer": "Eine ordentliche Kündigung beendet das Arbeitsverhältnis unter Einhaltung der gesetzlichen oder vertraglichen Kündigungsfristen. Eine außerordentliche (fristlose) Kündigung beendet das Arbeitsverhältnis mit sofortiger Wirkung; sie setzt gemäß § 626 BGB einen 'wichtigen Grund' voraus, der eine Fortsetzung der Zusammenarbeit bis zum Ablauf der Frist unzumutbar macht.",
+    "points": 4,
+    "explanation": "Ordentlich = mit Kündigungsfrist; Außerordentlich = fristlos aus wichtigem Grund innerhalb einer 2-Wochen-Frist ab Kenntnisnahme."
+  },
+  {
+    "id": 33,
+    "type": "single_choice",
+    "field": "Behandlungsassistenz / Pharmakologie",
+    "question": "Welche Arzneimittelgruppe wird zur Senkung des Blutdrucks eingesetzt und hemmt das Angiotensin-Converting-Enzym?",
+    "options": [
+      "A) Beta-Blocker",
+      "B) ACE-Hemmer",
+      "C) Diuretika",
+      "D) Kalziumantagonisten"
+    ],
+    "correct_answer": "B) ACE-Hemmer",
+    "points": 2,
+    "explanation": "ACE-Hemmer (z.B. Enalapril, Ramipril) blockieren das Enzym, das Angiotensin I in das gefäßverengende Angiotensin II umwandelt."
+  },
+  {
+    "id": 34,
+    "type": "multiple_choice",
+    "field": "Betriebsorganisation & Arbeitssicherheit",
+    "question": "Welche Schutzmaßnahmen schreibt die Biostoffverordnung / TRBA 250 zum Schutz vor Nadelstichverletzungen (NSV) vor? (Wählen Sie alle zutreffenden Aussagen)",
+    "options": [
+      "A) Einsatz von Sicherheitsgeräten mit automatischem Schutzmechanismus bei spitzen/scharfen medizinischen Instrumenten",
+      "B) Entsorgung gebrauchter Kanülen direkt am Ort der Entnahme in stich- und bruchfeste Behälter",
+      "C) Verbot von manuellem Recapping (Wiederaufstecken der Schutzkappe)",
+      "D) Entsorgung loser Kanülen im gelben Wertstoffsack"
+    ],
+    "correct_answer": [
+      "A) Einsatz von Sicherheitsgeräten mit automatischem Schutzmechanismus bei spitzen/scharfen medizinischen Instrumenten",
+      "B) Entsorgung gebrauchter Kanülen direkt am Ort der Entnahme in stich- und bruchfeste Behälter",
+      "C) Verbot von manuellem Recapping (Wiederaufstecken der Schutzkappe)"
+    ],
+    "points": 3,
+    "explanation": "Kanülen müssen in stichfeste gelbe Plastikboxen (Kanülenabwurf) entsorgt werden, keinesfalls in normale Müllsäcke oder Wertstoffsäcke."
+  },
+  {
+    "id": 35,
+    "type": "matching",
+    "field": "Behandlungsassistenz / Pulmologie",
+    "question": "Ordnen Sie die Lungenvolumina den korrekten Definitionen zu:",
+    "pairs": {
+      "Atemzugvolumen (AZV)": "Luftmenge, die bei normaler Ruheatmung ein- und ausgeatmet wird (ca. 500 ml)",
+      "Inspiratorisches Reservevolumen (IRV)": "Luftmenge, die nach normaler Einatmung zusätzlich noch maximal eingeordnet werden kann",
+      "Vitalkapazität (VK)": "Maximal ausatembare Luftmenge nach maximaler Einatmung",
+      "Residualvolumen (RV)": "Luftmenge, die auch nach maximaler Ausatmung in der Lunge verbleibt"
+    },
+    "points": 4,
+    "explanation": "AZV = 500 ml Ruheluft; IRV = zusätzliche Einatmung; VK = max. bewegbares Volumen; RV = verbleibende Restluft in den Alveolen."
   }
+]
 ]
