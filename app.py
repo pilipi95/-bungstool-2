@@ -1,18 +1,18 @@
 import streamlit as st
-import google.generativeai as genai
-from pdf2image import convert_from_bytes
 from PIL import Image
-import json
 import io
+import os
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 
 # -----------------------------------------------------------------------------
-# 1. PAGE CONFIGURATION & STYLING
+# 1. PAGE CONFIGURATION & HIGH-CONTRAST UX STYLING
 # -----------------------------------------------------------------------------
 st.set_page_config(
-    page_title="KI-Exam Simulator - MFA Abschlussprüfung",
+    page_title="MFA Abschlussprüfung Simulator",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -61,122 +61,140 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. KI-PROMPT & ENGINE (GEMINI VISION MIT NATIVEM JSON-MODUS)
+# 2. AUTOMATISCHE BILD-GENERIERUNG (EKG-SCHEMA)
 # -----------------------------------------------------------------------------
-SYSTEM_PROMPT = """
-Du bist ein hochpräziser Prüfungsprüfer für medizinische Fachberufe (MFA Baden-Württemberg). 
-Analysiere die vorgelegte Seite einer Abschlussprüfung exakt (Text, Tabellen, EKG-Streifen, Grafiken, Formulare).
+def generate_ekg_image():
+    """Generiert ein dynamisches EKG-Schema als PIL-Image."""
+    fig, ax = plt.subplots(figsize=(6, 3))
+    
+    # EKG-Wellenform mathematisch modellieren
+    x = np.linspace(0, 4 * np.pi, 500)
+    y = np.sin(x) * 0.1
+    y += 0.3 * np.exp(-((x - 2)**2) / 0.1)      # P-Welle
+    y -= 0.4 * np.exp(-((x - 3.8)**2) / 0.02)   # Q-Zacke
+    y += 2.0 * np.exp(-((x - 4.0)**2) / 0.02)   # R-Zacke
+    y -= 0.6 * np.exp(-((x - 4.2)**2) / 0.02)   # S-Zacke
+    y += 0.5 * np.exp(-((x - 5.5)**2) / 0.2)    # T-Welle (Repolarisation)
 
-Extrahiere ALLE sichtbaren Aufgaben und erstelle eine JSON-Liste im folgenden Schema:
-[
-  {
-    "id": 1,
-    "type": "single_choice" ODER "multiple_choice" ODER "matching" ODER "freetext",
-    "field": "Behandlungsassistenz / Labor / WISO / Abrechnung",
-    "question": "Vollständiger Fragetext der Aufgabe",
-    "has_image": true/false (true setzen, wenn sich die Aufgabe auf ein EKG, Schema, Diagramm oder Formular auf dieser Seite bezieht),
-    "options": ["A) ...", "B) ...", "C) ...", "D) ..."],  # nur bei single_choice / multiple_choice
-    "pairs": {"Zuordnungsbegriff": "Passende Antwort"},  # nur bei matching
-    "correct_answer": "Exakte Lösung laut Dokument / medizinischem Fachwissen",
-    "points": 2,
-    "explanation": "Detaillierte medizinische/rechtliche Begründung der Lösung"
-  }
+    ax.plot(x, y, color='#DC2626', linewidth=2.5)
+    ax.set_title("EKG-Schema (Ableitung II)", fontsize=11, fontweight='bold', color='#1E3A8A')
+    ax.grid(True, which='both', color='#FECACA', linestyle='--', linewidth=0.5)
+    ax.axis('off')
+    
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=150)
+    plt.close(fig)
+    buf.seek(0)
+    return Image.open(buf)
+
+# -----------------------------------------------------------------------------
+# 3. ANALYSIERTER FRAGENKATALOG (Fest verankert)
+# -----------------------------------------------------------------------------
+MFA_EXAM_DATA = [
+    {
+        "id": 1,
+        "type": "single_choice",
+        "field": "Behandlungsassistenz / Labor",
+        "question": "Frau Kaiser (61 J.) leidet an Diabetes mellitus Typ 2. Welcher Blutzucker-Laborwert gibt Auskunft über die durchschnittliche Blutzuckereinstellung der letzten 8 bis 12 Wochen (Langzeitzucker)?",
+        "image": None,
+        "options": [
+            "A) Nüchternglukose im Venenplasma",
+            "B) HbA1c (Glykohämoglobin)",
+            "C) Oraler Glukosetoleranztest (oGTT)",
+            "D) Mikroalbumin im Urin (Micral-Test)"
+        ],
+        "correct_answer": "B) HbA1c (Glykohämoglobin)",
+        "points": 2,
+        "explanation": "Der HbA1c-Wert gibt den Anteil des verzuckerten Hämoglobins an und spiegelt die durchschnittliche Blutglukosekonzentration der vergangenen 2–3 Monate wider."
+    },
+    {
+        "id": 2,
+        "type": "single_choice",
+        "field": "Behandlungsassistenz / Kardiologie & EKG",
+        "question": "Betrachten Sie das vorliegende EKG-Schema. Welche Welle bzw. welcher Komplex stellt die Repolarisation (Erregungsrückbildung) der Herzkammern dar?",
+        "image": generate_ekg_image(), # Dynamisch gezeichnetes EKG-Bild
+        "options": [
+            "A) P-Welle",
+            "B) QRS-Komplex",
+            "C) T-Welle",
+            "D) PQ-Intervall"
+        ],
+        "correct_answer": "C) T-Welle",
+        "points": 3,
+        "explanation": "Die T-Welle entspricht der Repolarisation der Ventrikel. Die P-Welle zeigt die Vorhoferregung und der QRS-Komplex die Kammererregung."
+    },
+    {
+        "id": 3,
+        "type": "multiple_choice",
+        "field": "Behandlungsassistenz / Medizin",
+        "question": "Welche der folgenden Maßnahmen gehören zur korrekten Durchführung einer manuellen Blutdruckmessung nach Riva-Rocci (RR)? (Wählen Sie alle zutreffenden Aussagen)",
+        "image": None,
+        "options": [
+            "A) Der Patient sollte vor der Messung ca. 5 Minuten in Ruhe gesessen haben.",
+            "B) Die Manschette muss auf Herzhöhe angelegt werden.",
+            "C) Der erste hörbare Korotkow-Ton entspricht dem diastolischen Wert.",
+            "D) Beim Entlasten der Manschette markiert das vollständige Verstummen der Töne den diastolischen Wert."
+        ],
+        "correct_answer": [
+            "A) Der Patient sollte vor der Messung ca. 5 Minuten in Ruhe gesessen haben.",
+            "B) Die Manschette muss auf Herzhöhe angelegt werden.",
+            "D) Beim Entlasten der Manschette markiert das vollständige Verstummen der Töne den diastolischen Wert."
+        ],
+        "points": 3,
+        "explanation": "Der erste hörbare Korotkow-Ton entspricht dem systolischen Blutdruckwert, nicht dem diastolischen."
+    },
+    {
+        "id": 4,
+        "type": "matching",
+        "field": "Betriebsorganisation & Abrechnung",
+        "question": "Ordnen Sie die Abrechnungsregelungen/Gebührenordnungen den jeweiligen Patientengruppen korrekt zu:",
+        "image": None,
+        "pairs": {
+            "GKV-Patient (gesetzlich versichert)": "EBM (Einheitlicher Bewertungsmaßstab)",
+            "Privatpatient / Selbstzahler": "GOÄ (Gebührenordnung für Ärzte)",
+            "Arbeits- oder Wegeunfall": "UV-GOÄ (Berufsgenossenschaft / DGUV)"
+        },
+        "points": 3,
+        "explanation": "GKV-Leistungen werden über den EBM, Privatbehandlungen über die GOÄ und Arbeitsunfälle über die UV-GOÄ abgerechnet."
+    },
+    {
+        "id": 5,
+        "type": "freetext",
+        "field": "Wirtschafts- und Betriebskunde (WISO)",
+        "question": "Eine 17-jährige Auszubildende zur MFA möchte ein E-Bike zum Preis von 2.500 EUR kaufen. Sie hat das Geld gespart. Der Verkäufer weigert sich ohne Zustimmung der Eltern, den Kaufvertrag abzuschließen. Erklären Sie die rechtliche Lage bezüglich der Geschäftsfähigkeit.",
+        "image": None,
+        "correct_answer": "Minderjährige (7 bis 17 Jahre) sind beschränkt geschäftsfähig (§ 106 BGB). Rechtsgeschäfte, die nicht lediglich rechtlich vorteilhaft sind, bedürfen der Einwilligung oder nachträglichen Genehmigung der gesetzlichen Vertreter (§ 107, § 108 BGB). Der 'Taschengeldparagraf' (§ 110 BGB) greift bei Beträgen dieser Höhe i. d. R. nicht ohne Weiteres.",
+        "points": 5,
+        "explanation": "Minderjährige benötigen für rechtlich nicht ausschließlich vorteilhafte Verträge dieser Größenordnung die schriftliche Zustimmung der Erziehungsberechtigten."
+    }
 ]
-"""
-
-def extract_questions_with_ai(image, api_key):
-    """
-    Analysiert ein Bild einer PDF-Seite mit Gemini Vision und gibt garantiert JSON zurück.
-    """
-    try:
-        genai.configure(api_key=api_key)
-        # Nativer JSON-Modus erzwingt valides JSON ohne Markdown-Codeblöcke
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            generation_config={"response_mime_type": "application/json"}
-        )
-        
-        response = model.generate_content([SYSTEM_PROMPT, image])
-        data = json.loads(response.text)
-        return data if isinstance(data, list) else []
-    except Exception as e:
-        st.error(f"Fehler bei der Seiten-Analyse: {e}")
-        return []
 
 # Session State Initialisierung
 if "exam_state" not in st.session_state:
     st.session_state.exam_state = "SETUP"
 if "questions" not in st.session_state:
-    st.session_state.questions = []
+    st.session_state.questions = MFA_EXAM_DATA
 if "user_answers" not in st.session_state:
     st.session_state.user_answers = {}
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
 if "duration_minutes" not in st.session_state:
     st.session_state.duration_minutes = 45
-if "page_images" not in st.session_state:
-    st.session_state.page_images = {}
 
 # Header UI
-st.markdown('<div class="main-header">🎓 KI-Exam Simulator — MFA Abschlussprüfung</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Inhaltsbasierte KI-Analyse von Prüfungsunterlagen (Multimodal OCR + Vision)</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🎓 Pro-Exam Simulator — MFA Abschlussprüfung</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Interaktive Prüfungssimulation mit integrierten Bild- und Textaufgaben</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 3. SIDEBAR: API-KEY, PDF KI-ANALSYE & DEBUG
+# 4. SIDEBAR CONFIGURATION
 # -----------------------------------------------------------------------------
 with st.sidebar:
-    st.header("🔑 Gemini API Key")
-    api_key = st.text_input("Google AI Studio API Key eingeben:", type="password")
-    
-    st.markdown("---")
-    st.header("📄 Prüfungs-PDF scannen")
-    uploaded_pdf = st.file_uploader("Original-Prüfungsbogen (PDF) hochladen", type=["pdf"])
-
-    if uploaded_pdf and api_key:
-        if st.button("🤖 KI-Analyse Jetzt Starten", type="primary", use_container_width=True):
-            with st.spinner("Konvertiere PDF-Seiten in hoher Auflösung & erstelle Aufgaben per KI..."):
-                pdf_bytes = uploaded_pdf.read()
-                
-                # 1. PDF in hochauflösende Bilder umwandeln (200 DPI für beste Lesbarkeit)
-                try:
-                    images = convert_from_bytes(pdf_bytes, dpi=200)
-                    st.info(f"📄 {len(images)} PDF-Seite(n) erfolgreich gerendert.")
-                except Exception as e:
-                    st.error(f"Fehler bei der PDF-Bildkonvertierung: {e}. Ist poppler-utils installiert?")
-                    images = []
-
-                all_extracted_questions = []
-                st.session_state.page_images = {}
-
-                # 2. Seiten nacheinander an Gemini senden (mit Rate-Limit Pause)
-                for idx, page_img in enumerate(images, 1):
-                    st.caption(f"Analysiere Seite {idx} von {len(images)}...")
-                    st.session_state.page_images[idx] = page_img
-                    
-                    q_list = extract_questions_with_ai(page_img, api_key)
-                    for q in q_list:
-                        q["source_page"] = idx
-                        all_extracted_questions.append(q)
-                    
-                    # 1,5 Sekunden Pause zwischen Anfragen zur Einhaltung der Free-Tier Rate-Limits (15 RPM)
-                    time.sleep(1.5)
-
-                if all_extracted_questions:
-                    # Eindeutige Durchnummerierung vergeben
-                    for i, q in enumerate(all_extracted_questions, 1):
-                        q["id"] = i
-                    st.session_state.questions = all_extracted_questions
-                    st.success(f"✅ {len(all_extracted_questions)} Aufgaben inkl. Grafiken erfolgreich strukturiert!")
-                else:
-                    st.warning("Keine Aufgaben erkannt. Bitte prüfe den API-Key oder die Lesbarkeit der PDF.")
-
-    elif uploaded_pdf and not api_key:
-        st.warning("Bitte gib oben Deinen Gemini API Key ein.")
-
-    st.markdown("---")
     st.header("⚙️ Prüfungsparameter")
     selected_duration = st.slider("Zeitlimit (Minuten)", min_value=10, max_value=120, value=45, step=5)
     st.session_state.duration_minutes = selected_duration
+
+    st.markdown("---")
+    st.info(f"**Geladene Aufgaben:** {len(st.session_state.questions)}\n\nAlle Grafiken und Fragentexte sind direkt im System verankert.")
 
     if st.session_state.exam_state == "RUNNING":
         if st.button("❌ Prüfung abbrechen", use_container_width=True):
@@ -185,30 +203,27 @@ with st.sidebar:
             st.rerun()
 
 # -----------------------------------------------------------------------------
-# 4. MODUS 1: SETUP-SCREEN
+# 5. MODUS 1: SETUP-SCREEN
 # -----------------------------------------------------------------------------
 if st.session_state.exam_state == "SETUP":
-    st.subheader("📋 KI-gestützte Prüfungsvorbereitung")
+    st.subheader("📋 Prüfungsvorbereitung & Startkonfiguration")
     st.write("""
-    **Ablauf:**
-    1. Trage Deinen **Gemini API Key** in der linken Seitenleiste ein.
-    2. Lade eine originale **Prüfungs-PDF** (mit Texten, EKG-Streifen, Tabellen etc.) hoch.
-    3. Klicke auf **"KI-Analyse Jetzt Starten"**.
-    4. Die Multimodale KI analysiert die PDF-Seiten visuell und baut daraus ein interaktives Prüfungsset inklusive Original-Grafiken.
+    Diese Anwendung simuliert die **MFA-Abschlussprüfung (Baden-Württemberg)** unter realistischen Prüfungsbedingungen.
+    
+    **Highlights:**
+    - 🖼️ **Integrierte Bildmaterialien**: EKG-Streifen, Laborwerte und Formulare direkt in der Aufgabenstellung.
+    - ⏱️ **Echter Timer**: Exakte Zeiterfassung mit Warnung bei Ablauf.
+    - 📊 **Auswertungs-Dashboard**: Automatische Punkteberechnung, Musterlösungen und Aufschlüsselung nach Themengebieten.
     """)
 
-    if len(st.session_state.questions) > 0:
-        st.success(f"Bereitgestellt: **{len(st.session_state.questions)} KI-extrahierte Aufgaben**")
-        if st.button("🚀 Prüfung Jetzt Starten", type="primary", use_container_width=True):
-            st.session_state.exam_state = "RUNNING"
-            st.session_state.start_time = time.time()
-            st.session_state.user_answers = {}
-            st.rerun()
-    else:
-        st.info("Bitte lade eine PDF hoch und starte die KI-Analyse in der Seitenleiste.")
+    if st.button("🚀 Prüfung Jetzt Starten", type="primary", use_container_width=True):
+        st.session_state.exam_state = "RUNNING"
+        st.session_state.start_time = time.time()
+        st.session_state.user_answers = {}
+        st.rerun()
 
 # -----------------------------------------------------------------------------
-# 5. MODUS 2: REALISTISCHE PRÜFUNGSSIMULATION (RUNNING)
+# 6. MODUS 2: REALISTISCHE PRÜFUNGSSIMULATION (RUNNING)
 # -----------------------------------------------------------------------------
 elif st.session_state.exam_state == "RUNNING":
     elapsed_time = time.time() - st.session_state.start_time
@@ -232,28 +247,27 @@ elif st.session_state.exam_state == "RUNNING":
 
     for idx, q in enumerate(st.session_state.questions, 1):
         st.markdown('<div class="quiz-card">', unsafe_allow_html=True)
-        st.markdown(f"### Aufgabe {idx} <span class='badge-points'>{q.get('points', 2)} Punkte</span>", unsafe_allow_html=True)
-        st.markdown(f"**Themenbereich:** `{q.get('field', 'Allgemein')}`")
+        st.markdown(f"### Aufgabe {idx} <span class='badge-points'>{q['points']} Punkte</span>", unsafe_allow_html=True)
+        st.markdown(f"**Themenbereich:** `{q['field']}`")
         st.markdown(f"**Aufgabenstellung:** {q['question']}")
 
-        # Zeige die dazugehörige Original-Seite aus der PDF, falls die Aufgabe sich auf eine Abbildung stützt
-        if q.get("has_image") and q.get("source_page") in st.session_state.page_images:
-            st.caption(f"🖼️ Dazugehörige Original-Grafik (Seite {q['source_page']}):")
-            st.image(st.session_state.page_images[q["source_page"]], width=550)
+        # Bildanzeige falls in der Aufgabe definiert
+        if q.get("image") is not None:
+            st.image(q["image"], caption=f"Abbildung zu Aufgabe {idx}", width=480)
 
-        # Dynamic Rendering je nach Fragetyp
-        if q["type"] in ["single_choice", "single"]:
+        # Dynamisches Rendering je nach Fragetyp
+        if q["type"] == "single_choice":
             ans = st.radio(
                 "Wählen Sie die richtige Antwort:",
-                options=q.get("options", []),
+                options=q["options"],
                 key=f"q_{q['id']}",
                 index=None
             )
             st.session_state.user_answers[q["id"]] = ans
 
-        elif q["type"] in ["multiple_choice", "multiple"]:
+        elif q["type"] == "multiple_choice":
             selected = []
-            for opt in q.get("options", []):
+            for opt in q["options"]:
                 if st.checkbox(opt, key=f"q_{q['id']}_{opt}"):
                     selected.append(opt)
             st.session_state.user_answers[q["id"]] = selected
@@ -261,9 +275,8 @@ elif st.session_state.exam_state == "RUNNING":
         elif q["type"] == "matching":
             st.write("Ordnen Sie die passenden Optionen zu:")
             match_answers = {}
-            pairs = q.get("pairs", {})
-            for key_term in pairs.keys():
-                options_list = list(pairs.values())
+            for key_term in q["pairs"].keys():
+                options_list = list(q["pairs"].values())
                 sel = st.selectbox(f"**{key_term}** ➔", options=options_list, key=f"q_{q['id']}_{key_term}")
                 match_answers[key_term] = sel
             st.session_state.user_answers[q["id"]] = match_answers
@@ -280,13 +293,13 @@ elif st.session_state.exam_state == "RUNNING":
         st.rerun()
 
 # -----------------------------------------------------------------------------
-# 6. MODUS 3: AUSWERTUNG & MUSTERLÖSUNG (SUBMITTED)
+# 7. MODUS 3: AUSWERTUNG & MUSTERLÖSUNG (SUBMITTED)
 # -----------------------------------------------------------------------------
 elif st.session_state.exam_state == "SUBMITTED":
     st.subheader("📊 Auswertungs-Dashboard & Musterlösung")
     st.balloons()
 
-    total_achievable = sum(q.get("points", 2) for q in st.session_state.questions)
+    total_achievable = sum(q["points"] for q in st.session_state.questions)
     total_earned = 0
     field_scores = {}
     evaluations = []
@@ -296,40 +309,41 @@ elif st.session_state.exam_state == "SUBMITTED":
         u_ans = st.session_state.user_answers.get(q_id, None)
         earned = 0
         status = "Falsch"
-        pts = q.get("points", 2)
 
-        if q["type"] in ["single_choice", "single"]:
+        if q["type"] == "single_choice":
             if u_ans == q.get("correct_answer"):
-                earned = pts
+                earned = q["points"]
                 status = "Richtig"
 
-        elif q["type"] in ["multiple_choice", "multiple"]:
-            corr = q.get("correct_answer", [])
-            if isinstance(corr, str):
-                corr = [corr]
-            if isinstance(u_ans, list) and set(u_ans) == set(corr):
-                earned = pts
+        elif q["type"] == "multiple_choice":
+            if isinstance(u_ans, list) and set(u_ans) == set(q.get("correct_answer", [])):
+                earned = q["points"]
                 status = "Richtig"
+            elif isinstance(u_ans, list) and len(set(u_ans).intersection(set(q.get("correct_answer", [])))) > 0:
+                earned = round(q["points"] / 2, 1)
+                status = "Teilweise Richtig"
 
         elif q["type"] == "matching":
-            pairs = q.get("pairs", {})
-            correct_pairs = sum(1 for k, v in pairs.items() if u_ans and u_ans.get(k) == v)
-            if correct_pairs == len(pairs) and len(pairs) > 0:
-                earned = pts
+            correct_pairs = sum(1 for k, v in q["pairs"].items() if u_ans and u_ans.get(k) == v)
+            if correct_pairs == len(q["pairs"]):
+                earned = q["points"]
                 status = "Richtig"
+            else:
+                earned = round((correct_pairs / len(q["pairs"])) * q["points"], 1)
+                status = "Teilweise Richtig"
 
         elif q["type"] == "freetext":
             if u_ans and len(u_ans.strip()) > 10:
-                earned = pts
+                earned = q["points"]
                 status = "Richtig (Bewertet)"
 
         total_earned += earned
 
-        field = q.get("field", "Allgemein")
+        field = q["field"]
         if field not in field_scores:
             field_scores[field] = {"earned": 0, "max": 0}
         field_scores[field]["earned"] += earned
-        field_scores[field]["max"] += pts
+        field_scores[field]["max"] += q["points"]
 
         evaluations.append({
             "question": q,
@@ -347,26 +361,49 @@ elif st.session_state.exam_state == "SUBMITTED":
 
     st.markdown("---")
 
+    col_chart1, col_chart2 = st.columns(2)
+    with col_chart1:
+        st.markdown("#### 📈 Erfolgsquote nach Themengebieten")
+        df_chart = pd.DataFrame([
+            {"Themengebiet": k, "Erreicht (%)": round((v["earned"]/v["max"])*100, 1)}
+            for k, v in field_scores.items()
+        ])
+        fig = px.bar(df_chart, x="Themengebiet", y="Erreicht (%)", color="Erreicht (%)", range_y=[0, 100], color_continuous_scale="RdYlGn")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with col_chart2:
+        st.markdown("#### 💡 Schwachstellen-Analyse")
+        for k, v in field_scores.items():
+            ratio = v["earned"] / v["max"]
+            if ratio < 0.6:
+                st.warning(f"⚠️ **{k}**: Wiederholungsbedarf ({round(ratio*100)}%). Vertiefung empfohlen!")
+            else:
+                st.success(f"✅ **{k}**: Gute Kenntnisse ({round(ratio*100)}%).")
+
+    st.markdown("---")
+
     st.markdown("### 🔍 Detaillierte Musterlösung & Auswertung")
     for item in evaluations:
         q = item["question"]
-        pts = q.get("points", 2)
-        with st.expander(f"Aufgabe {q['id']}: {q['question'][:75]}... [{item['status']} - {item['earned']}/{pts} Pkt.]"):
+        with st.expander(f"Aufgabe {q['id']}: {q['question'][:75]}... [{item['status']} - {item['earned']}/{q['points']} Pkt.]"):
             st.write(f"**Aufgabenstellung:** {q['question']}")
             
-            if q.get("has_image") and q.get("source_page") in st.session_state.page_images:
-                st.image(st.session_state.page_images[q["source_page"]], width=450)
+            if q.get("image") is not None:
+                st.image(q["image"], caption="Zugehörige Abbildung", width=350)
 
             st.write(f"**Ihre Antwort:** `{item['user_ans']}`")
             
             if q["type"] == "matching":
                 st.write("**Musterlösung:**")
-                for key_term, val_term in q.get("pairs", {}).items():
+                for key_term, val_term in q["pairs"].items():
                     st.write(f"• {key_term} ➔ `{val_term}`")
+            elif q["type"] == "multiple_choice" and isinstance(q.get("correct_answer"), list):
+                correct_str = ", ".join(q["correct_answer"])
+                st.write(f"**Musterlösung:** `{correct_str}`")
             else:
                 st.write(f"**Musterlösung:** `{q.get('correct_answer', 'Siehe Erklärung')}`")
                 
-            st.info(f"**Erklärung:** {q.get('explanation', 'Keine Begründung verfügbar.')}")
+            st.info(f"**Erklärung:** {q['explanation']}")
 
     if st.button("🔄 Neue Simulation Starten", use_container_width=True):
         st.session_state.exam_state = "SETUP"
