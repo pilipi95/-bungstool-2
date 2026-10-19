@@ -1,7 +1,6 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import io
-import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -61,36 +60,70 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# 2. AUTOMATISCHE BILD-GENERIERUNG (EKG-SCHEMA)
+# 2. AUTOMATISCHE BILD- UND SCHAUBILD-GENERIERUNG (PIL / Matplotlib)
 # -----------------------------------------------------------------------------
 def generate_ekg_image():
     """Generiert ein dynamisches EKG-Schema als PIL-Image."""
-    fig, ax = plt.subplots(figsize=(6, 3))
-    
-    # EKG-Wellenform mathematisch modellieren
+    fig, ax = plt.subplots(figsize=(6, 2.5))
     x = np.linspace(0, 4 * np.pi, 500)
     y = np.sin(x) * 0.1
     y += 0.3 * np.exp(-((x - 2)**2) / 0.1)      # P-Welle
     y -= 0.4 * np.exp(-((x - 3.8)**2) / 0.02)   # Q-Zacke
     y += 2.0 * np.exp(-((x - 4.0)**2) / 0.02)   # R-Zacke
     y -= 0.6 * np.exp(-((x - 4.2)**2) / 0.02)   # S-Zacke
-    y += 0.5 * np.exp(-((x - 5.5)**2) / 0.2)    # T-Welle (Repolarisation)
-
+    y += 0.5 * np.exp(-((x - 5.5)**2) / 0.2)    # T-Welle
     ax.plot(x, y, color='#DC2626', linewidth=2.5)
-    ax.set_title("EKG-Schema (Ableitung II)", fontsize=11, fontweight='bold', color='#1E3A8A')
+    ax.set_title("EKG-Schema (Ableitung II)", fontsize=10, fontweight='bold', color='#1E3A8A')
     ax.grid(True, which='both', color='#FECACA', linestyle='--', linewidth=0.5)
     ax.axis('off')
-    
     buf = io.BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight', dpi=150)
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=130)
+    plt.close(fig)
+    buf.seek(0)
+    return Image.open(buf)
+
+def generate_urology_image():
+    """Generiert eine vereinfachte Schemazahlentafel der Harnorgane."""
+    img = Image.new('RGB', (400, 300), color='#FFFFFF')
+    draw = ImageDraw.Draw(img)
+    # Nieren
+    draw.ellipse([80, 50, 140, 120], fill='#991B1B', outline='black')
+    draw.ellipse([260, 50, 320, 120], fill='#991B1B', outline='black')
+    # Harnleiter (Ureter)
+    draw.line([110, 120, 180, 220], fill='#2563EB', width=4)
+    draw.line([290, 120, 220, 220], fill='#2563EB', width=4)
+    # Blase
+    draw.ellipse([160, 210, 240, 260], fill='#F59E0B', outline='black')
+    # Harnröhre (Urethra)
+    draw.line([200, 260, 200, 290], fill='#10B981', width=5)
+    
+    # Beschriftungszahlen
+    draw.text((105, 75), "1", fill="white") # Niere
+    draw.text((140, 160), "4", fill="black") # Ureter (4)
+    draw.text((195, 230), "5", fill="black") # Blase
+    draw.text((208, 270), "6", fill="black") # Urethra (6)
+    return img
+
+def generate_arm_fracture_image():
+    """Generiert ein Unterarm-Knochen-Schema zur Frakturaufgabe."""
+    fig, ax = plt.subplots(figsize=(5, 2))
+    ax.plot([0.2, 0.8], [0.6, 0.6], color='#4B5563', linewidth=8, label='Humerus (A)')
+    ax.plot([0.8, 1.8], [0.7, 0.7], color='#2563EB', linewidth=6, label='Radius (C)')
+    ax.plot([0.8, 1.8], [0.5, 0.5], color='#D97706', linewidth=6, label='Ulna (B)')
+    ax.scatter([1.8, 1.85, 1.9], [0.6, 0.65, 0.55], color='#059669', s=100, label='Ossa carpi (D)')
+    ax.set_title("Schema Unterarmknochen (A: Humerus, B: Ulna, C: Radius, D: Handwurzel)", fontsize=8)
+    ax.axis('off')
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', bbox_inches='tight', dpi=120)
     plt.close(fig)
     buf.seek(0)
     return Image.open(buf)
 
 # -----------------------------------------------------------------------------
-# 3. ANALYSIERTER FRAGENKATALOG (Fest verankert)
+# 3. ANALYSIERTER FRAGENKATALOG (Aus allen Originaldokumenten konsolidiert)
 # -----------------------------------------------------------------------------
 MFA_EXAM_DATA = [
+    # --- BEHANDLUNGSASSISTENZ / MEDIZIN & LABOR ---
     {
         "id": 1,
         "type": "single_choice",
@@ -112,7 +145,7 @@ MFA_EXAM_DATA = [
         "type": "single_choice",
         "field": "Behandlungsassistenz / Kardiologie & EKG",
         "question": "Betrachten Sie das vorliegende EKG-Schema. Welche Welle bzw. welcher Komplex stellt die Repolarisation (Erregungsrückbildung) der Herzkammern dar?",
-        "image": generate_ekg_image(), # Dynamisch gezeichnetes EKG-Bild
+        "image": generate_ekg_image(),
         "options": [
             "A) P-Welle",
             "B) QRS-Komplex",
@@ -146,6 +179,61 @@ MFA_EXAM_DATA = [
     {
         "id": 4,
         "type": "matching",
+        "field": "Behandlungsassistenz / Anatomie & Urologie",
+        "question": "Ordnen Sie den Nummern im Schema der Harnorgane die passenden medizinischen Fachbegriffe zu:",
+        "image": generate_urology_image(),
+        "pairs": {
+            "Nummer 4 (Ableitender Gang)": "Ureter (Harnleiter)",
+            "Nummer 5 (Sammelorgan)": "Harnblase",
+            "Nummer 6 (Ausscheidungsgang)": "Urethra (Harnröhre)"
+        },
+        "points": 3,
+        "explanation": "Ureter = Harnleiter (4), Harnblase (5), Urethra = Harnröhre (6)."
+    },
+    {
+        "id": 5,
+        "type": "matching",
+        "field": "Behandlungsassistenz / Labor / Blutbild",
+        "question": "Ordnen Sie die deutschen Bezeichnungen der Blutzellen den jeweiligen Fachbegriffen und Aufgaben zu:",
+        "image": None,
+        "pairs": {
+            "Rote Blutkörperchen": "Erythrozyten (Sauerstofftransport)",
+            "Weiße Blutkörperchen": "Leukozyten (Abwehrfunktion)",
+            "Blutplättchen": "Thrombozyten (Blutgerinnung)"
+        },
+        "points": 3,
+        "explanation": "Erythrozyten transportieren O2/CO2, Leukozyten dienen der Immunabwehr, Thrombozyten der Blutstillung."
+    },
+    {
+        "id": 6,
+        "type": "freetext",
+        "field": "Behandlungsassistenz / Wundversorgung & Hygiene",
+        "question": "Bei einer Patientin liegt eine Bisswunde am Unterschenkel vor. Erklären Sie, weshalb eine Bisswunde in der Regel primär nicht durch eine Naht verschlossen werden sollte und welche Hygienemaßnahmen beim Verbandswechsel beachtet werden müssen.",
+        "image": None,
+        "correct_answer": "Bisswunden weisen aufgrund der hohen Keimbesiedlung im Speichel ein extrem hohes Infektionsrisiko auf. Ein primärer Wundverschluss würde Keime einschließen und Abszesse oder Phlegmonen begünstigen. Beim Verbandwechsel gelten sterile Bedingungen, Antiseptik, Händedesinfektion und die Entsorgung von Kanülen/Scharfstoffen in stichfesten Boxen.",
+        "points": 4,
+        "explanation": "Bisswunden gelten als primär infiziert. Der offene Ablauf von Wundsekret verhindert schwerwiegende Infektionen."
+    },
+    {
+        "id": 7,
+        "type": "matching",
+        "field": "Behandlungsassistenz / Traumatologie",
+        "question": "Ordnen Sie die Buchstabencodes aus dem Schaubild den jeweiligen Armknochen zu:",
+        "image": generate_arm_fracture_image(),
+        "pairs": {
+            "A (Oberarm)": "Humerus",
+            "B (Unterarm daumenseitig abgewandt)": "Ulna (Elle)",
+            "C (Unterarm daumenseitig)": "Radius (Speiche)",
+            "D (Handwurzel)": "Ossa carpi"
+        },
+        "points": 4,
+        "explanation": "A=Humerus, B=Ulna, C=Radius, D=Ossa carpi (Handwurzelknochen)."
+    },
+
+    # --- BETRIEBSORGANISATION & ABRECHNUNG ---
+    {
+        "id": 8,
+        "type": "matching",
         "field": "Betriebsorganisation & Abrechnung",
         "question": "Ordnen Sie die Abrechnungsregelungen/Gebührenordnungen den jeweiligen Patientengruppen korrekt zu:",
         "image": None,
@@ -158,7 +246,25 @@ MFA_EXAM_DATA = [
         "explanation": "GKV-Leistungen werden über den EBM, Privatbehandlungen über die GOÄ und Arbeitsunfälle über die UV-GOÄ abgerechnet."
     },
     {
-        "id": 5,
+        "id": 9,
+        "type": "single_choice",
+        "field": "Betriebsorganisation & Abrechnung",
+        "question": "Eine GKV-Patientin erhält wegen akuter Beschwerden am 20.03. eine Erstberatung sowie eine sonografische Untersuchung des Abdomens. Welche Gebührenordnungsposition (GOP) deckt das hausärztliche Gespräch ab?",
+        "image": None,
+        "options": [
+            "A) GOP 03000 (Versichertenpauschale)",
+            "B) GOP 03230 (Problemorientiertes ärztliches Gespräch)",
+            "C) GOP 01410 (Besuchsgebühr)",
+            "D) GOP 03220 (Chronikerpauschale)"
+        ],
+        "correct_answer": "B) GOP 03230 (Problemorientiertes ärztliches Gespräch)",
+        "points": 2,
+        "explanation": "Die GOP 03230 berechnet das problemorientierte hausärztliche Gespräch je vollendete 10 Minuten."
+    },
+
+    # --- WIRTSCHAFTS- UND BETRIEBSKUNDE (WISO) ---
+    {
+        "id": 10,
         "type": "freetext",
         "field": "Wirtschafts- und Betriebskunde (WISO)",
         "question": "Eine 17-jährige Auszubildende zur MFA möchte ein E-Bike zum Preis von 2.500 EUR kaufen. Sie hat das Geld gespart. Der Verkäufer weigert sich ohne Zustimmung der Eltern, den Kaufvertrag abzuschließen. Erklären Sie die rechtliche Lage bezüglich der Geschäftsfähigkeit.",
@@ -166,6 +272,48 @@ MFA_EXAM_DATA = [
         "correct_answer": "Minderjährige (7 bis 17 Jahre) sind beschränkt geschäftsfähig (§ 106 BGB). Rechtsgeschäfte, die nicht lediglich rechtlich vorteilhaft sind, bedürfen der Einwilligung oder nachträglichen Genehmigung der gesetzlichen Vertreter (§ 107, § 108 BGB). Der 'Taschengeldparagraf' (§ 110 BGB) greift bei Beträgen dieser Höhe i. d. R. nicht ohne Weiteres.",
         "points": 5,
         "explanation": "Minderjährige benötigen für rechtlich nicht ausschließlich vorteilhafte Verträge dieser Größenordnung die schriftliche Zustimmung der Erziehungsberechtigten."
+    },
+    {
+        "id": 11,
+        "type": "multiple_choice",
+        "field": "Wirtschafts- und Betriebskunde (WISO)",
+        "question": "Welche Bestimmungen des Jugendarbeitsschutzgesetzes (JArbSchG) treffen auf 16-jährige Auszubildende zu? (Wählen Sie alle richtigen Antworten)",
+        "image": None,
+        "options": [
+            "A) Tägliche Arbeitszeit darf maximal 8 Stunden (bzw. 8,5 Std. bei Ausgleich) betragen.",
+            "B) Samstagsarbeit ist grundsätzlich erlaubt ohne Ruhetagsausgleich.",
+            "C) Bei mehr als 6 Stunden Arbeitszeit steht eine Pause von mindestens 60 Minuten zu.",
+            "D) Der Urlaubsanspruch beträgt mindestens 27 Werktage, wenn der Jugendliche zu Beginn des Jahres noch nicht 17 Jahre alt ist."
+        ],
+        "correct_answer": [
+            "A) Tägliche Arbeitszeit darf maximal 8 Stunden (bzw. 8,5 Std. bei Ausgleich) betragen.",
+            "C) Bei mehr als 6 Stunden Arbeitszeit steht eine Pause von mindestens 60 Minuten zu.",
+            "D) Der Urlaubsanspruch beträgt mindestens 27 Werktage, wenn der Jugendliche zu Beginn des Jahres noch nicht 17 Jahre alt ist."
+        ],
+        "points": 3,
+        "explanation": "Für Jugendliche gilt die 5-Tage-Woche sowie Samstagsruhe (§ 15, § 16 JArbSchG)."
+    },
+
+    # --- GEMEINSCHAFTSKUNDE ---
+    {
+        "id": 12,
+        "type": "multiple_choice",
+        "field": "Gemeinschaftskunde",
+        "question": "Welche der folgenden Wahlgrundsätze sind in Art. 38 des Grundgesetzes (GG) für Wahlen zum Deutschen Bundestag verankert? (Wählen Sie alle zutreffenden Aussagen)",
+        "image": None,
+        "options": [
+            "A) Allgemein (alle Staatsbürger ab 18 Jahren dürfen wählen)",
+            "B) Unmittelbar (direkte Wahl ohne Wahlmänner)",
+            "C) Verpflichtend (Wahlpflicht für alle Bürger)",
+            "D) Geheim (unbeeinflusste, verdeckte Stimmabgabe)"
+        ],
+        "correct_answer": [
+            "A) Allgemein (alle Staatsbürger ab 18 Jahren dürfen wählen)",
+            "B) Unmittelbar (direkte Wahl ohne Wahlmänner)",
+            "D) Geheim (unbeeinflusste, verdeckte Stimmabgabe)"
+        ],
+        "points": 3,
+        "explanation": "Die Wahlen in Deutschland sind allgemein, unmittelbar, frei, gleich und geheim. Eine Wahlpflicht gibt es in Deutschland nicht."
     }
 ]
 
@@ -183,7 +331,7 @@ if "duration_minutes" not in st.session_state:
 
 # Header UI
 st.markdown('<div class="main-header">🎓 Pro-Exam Simulator — MFA Abschlussprüfung</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-header">Interaktive Prüfungssimulation mit integrierten Bild- und Textaufgaben</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-header">Interaktive Prüfungssimulation mit integrierten Bild- und Textaufgaben aus den Prüfungsjahrgängen</div>', unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
 # 4. SIDEBAR CONFIGURATION
@@ -194,7 +342,7 @@ with st.sidebar:
     st.session_state.duration_minutes = selected_duration
 
     st.markdown("---")
-    st.info(f"**Geladene Aufgaben:** {len(st.session_state.questions)}\n\nAlle Grafiken und Fragentexte sind direkt im System verankert.")
+    st.info(f"**Geladene Aufgaben:** {len(st.session_state.questions)}\n\nIntegrierte Themenbereiche:\n- Behandlungsassistenz & Labor\n- Kardiologie & Urologie\n- Betriebsorganisation & EBM/GOÄ\n- WISO & Gesetzestexte\n- Gemeinschaftskunde")
 
     if st.session_state.exam_state == "RUNNING":
         if st.button("❌ Prüfung abbrechen", use_container_width=True):
@@ -208,10 +356,10 @@ with st.sidebar:
 if st.session_state.exam_state == "SETUP":
     st.subheader("📋 Prüfungsvorbereitung & Startkonfiguration")
     st.write("""
-    Diese Anwendung simuliert die **MFA-Abschlussprüfung (Baden-Württemberg)** unter realistischen Prüfungsbedingungen.
+    Diese Anwendung simuliert die **MFA-Abschlussprüfung (Baden-Württemberg)** unter realistischen Prüfungsbedingungen basierend auf den aktuellen Aufgabenkatalogen.
     
     **Highlights:**
-    - 🖼️ **Integrierte Bildmaterialien**: EKG-Streifen, Laborwerte und Formulare direkt in der Aufgabenstellung.
+    - 🖼️ **Integrierte Schaubilder & Anatomie**: EKG-Streifen, Organ-Schemata, Knochenstruktur & Laborwerte.
     - ⏱️ **Echter Timer**: Exakte Zeiterfassung mit Warnung bei Ablauf.
     - 📊 **Auswertungs-Dashboard**: Automatische Punkteberechnung, Musterlösungen und Aufschlüsselung nach Themengebieten.
     """)
@@ -253,7 +401,7 @@ elif st.session_state.exam_state == "RUNNING":
 
         # Bildanzeige falls in der Aufgabe definiert
         if q.get("image") is not None:
-            st.image(q["image"], caption=f"Abbildung zu Aufgabe {idx}", width=480)
+            st.image(q["image"], caption=f"Abbildung zu Aufgabe {idx}", width=450)
 
         # Dynamisches Rendering je nach Fragetyp
         if q["type"] == "single_choice":
