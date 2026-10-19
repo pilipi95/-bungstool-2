@@ -41,7 +41,7 @@ st.markdown(
     }
     </style>
 """,
-    unsafe_allow_allow_html=True,
+    unsafe_allow_html=True,  # <-- Hier lag der Fehler
 )
 
 # Database of Questions Extracted from Exam Documents
